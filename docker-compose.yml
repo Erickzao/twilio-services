@@ -1,0 +1,29 @@
+services:
+  scylladb:
+    image: scylladb/scylla:latest
+    container_name: scylladb
+    ports:
+      - "9042:9042"
+      - "9160:9160"
+      - "10000:10000"
+    volumes:
+      - scylla_data:/var/lib/scylla
+    command: --smp 1 --memory 512M --overprovisioned 1 --api-address 0.0.0.0
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe cluster"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+volumes:
+  scylla_data:
