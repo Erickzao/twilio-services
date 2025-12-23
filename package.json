@@ -4,12 +4,23 @@
   "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "bun run --watch src/index.ts",
+    "api:dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
+    "api:start": "bun run src/index.ts",
     "build": "bun build src/index.ts --outdir ./dist --target bun",
+    "api:build": "bun build src/index.ts --outdir ./dist --target bun",
     "test": "bun test",
     "migrate": "bun run src/database/migrations.ts",
+    "api:migrate": "bun run src/database/migrations.ts",
+    "web:dev": "bun run --cwd apps/web start",
+    "web:build": "bun run --cwd apps/web build",
+    "web:test": "bun run --cwd apps/web test",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
     "lint": "biome lint src",
     "lint:fix": "biome lint src --write",

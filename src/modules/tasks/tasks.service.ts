@@ -354,40 +354,89 @@ export class TasksService {
     client: Twilio.Twilio,
     conversationSid: string,
     workerSid: string | undefined,
+    hints?: {
+      workerName?: string;
+      customerAddress?: string;
+      customerFrom?: string;
+    },
   ): Promise<string | null> {
-    if (!workerSid || workerSid.trim().length === 0) return null;
-
     try {
       const participants = await client.conversations.v1
         .conversations(conversationSid)
         .participants.list({ limit: 50 });
+      const normalize = (value?: string) => value?.trim().toLowerCase() ?? '';
+      const normalizedWorkerSid = normalize(workerSid);
+      const normalizedWorkerName = normalize(hints?.workerName);
+      const hasWorkerSid = normalizedWorkerSid.length > 0;
+      const workerSidValue = workerSid ?? '';
+      const customerMarkers = new Set(
+        [hints?.customerAddress, hints?.customerFrom]
+          .map((value) => normalize(value))
+          .filter(Boolean),
+      );
+
+      const isCustomerParticipant = (participant: (typeof participants)[number]): boolean => {
+        const identity =
+          typeof participant.identity === 'string' ? normalize(participant.identity) : '';
+        if (identity && customerMarkers.has(identity)) return true;
+
+        const binding = participant.messagingBinding as { address?: string } | undefined;
+        const bindingAddress = normalize(binding?.address);
+        if (bindingAddress && customerMarkers.has(bindingAddress)) return true;
+
+        return false;
+      };
 
       for (const participant of participants) {
         const identity =
           typeof participant.identity === 'string' ? participant.identity.trim() : '';
         if (!identity) continue;
-        if (identity === workerSid) return identity;
+        if (hasWorkerSid && normalize(identity) === normalizedWorkerSid) return identity;
       }
 
-      for (const participant of participants) {
-        const identity =
-          typeof participant.identity === 'string' ? participant.identity.trim() : '';
-        if (!identity) continue;
-
-        const attrs = this.parseTaskAttributes(participant.attributes || '{}');
-        const sidFromAttrs = this.pickWorkerSidFromAttributes(attrs);
-        if (sidFromAttrs && sidFromAttrs === workerSid) return identity;
-      }
-
-      for (const participant of participants) {
-        const identity =
-          typeof participant.identity === 'string' ? participant.identity.trim() : '';
-        if (!identity) continue;
-
-        const rawAttrs = participant.attributes;
-        if (typeof rawAttrs === 'string' && rawAttrs.includes(workerSid)) {
-          return identity;
+      if (normalizedWorkerName) {
+        for (const participant of participants) {
+          const identity =
+            typeof participant.identity === 'string' ? participant.identity.trim() : '';
+          if (!identity) continue;
+          if (normalize(identity) === normalizedWorkerName) return identity;
         }
+      }
+
+      if (hasWorkerSid) {
+        for (const participant of participants) {
+          const identity =
+            typeof participant.identity === 'string' ? participant.identity.trim() : '';
+          if (!identity) continue;
+
+          const attrs = this.parseTaskAttributes(participant.attributes || '{}');
+          const sidFromAttrs = this.pickWorkerSidFromAttributes(attrs);
+          if (sidFromAttrs && normalize(sidFromAttrs) === normalizedWorkerSid) return identity;
+        }
+
+        for (const participant of participants) {
+          const identity =
+            typeof participant.identity === 'string' ? participant.identity.trim() : '';
+          if (!identity) continue;
+
+          const rawAttrs = participant.attributes;
+          if (typeof rawAttrs === 'string' && rawAttrs.includes(workerSidValue)) {
+            return identity;
+          }
+        }
+      }
+
+      const candidateIdentities: string[] = [];
+      for (const participant of participants) {
+        const identity =
+          typeof participant.identity === 'string' ? participant.identity.trim() : '';
+        if (!identity) continue;
+        if (isCustomerParticipant(participant)) continue;
+        candidateIdentities.push(identity);
+      }
+
+      if (candidateIdentities.length === 1) {
+        return candidateIdentities[0] ?? null;
       }
 
       return null;
@@ -601,6 +650,11 @@ export class TasksService {
         client,
         conversationSid,
         workerSid,
+        {
+          workerName,
+          customerAddress: typeof customerAddress === 'string' ? customerAddress : undefined,
+          customerFrom: typeof customerFrom === 'string' ? customerFrom : undefined,
+        },
       );
       if (!workerIdentity) {
         if (!this.warnedWorkerParticipantMissing.has(task.sid)) {
@@ -685,6 +739,11 @@ export class TasksService {
       client,
       task.conversation_sid,
       task.worker_sid,
+      {
+        workerName: task.worker_name,
+        customerAddress: task.customer_address,
+        customerFrom: task.customer_from,
+      },
     );
     if (!workerIdentity) {
       logger.warn(
@@ -723,6 +782,11 @@ export class TasksService {
       client,
       task.conversation_sid,
       task.worker_sid,
+      {
+        workerName: task.worker_name,
+        customerAddress: task.customer_address,
+        customerFrom: task.customer_from,
+      },
     );
     if (!workerIdentity) {
       logger.warn(

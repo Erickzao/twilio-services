@@ -1,0 +1,111 @@
+@import 'primeicons/primeicons.css';
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap');
+
+:root {
+  --bg: #0d0d0e;
+  --surface: #111113;
+  --surface-2: #141416;
+  --surface-3: #19191c;
+  --border: #242428;
+  --border-strong: #2f2f35;
+  --text: #e6e6ea;
+  --text-muted: #b2b2ba;
+  --text-subtle: #7b7b86;
+  --accent: #3b6fff;
+  --accent-strong: #5883ff;
+  --accent-soft: rgba(59, 111, 255, 0.16);
+  --success: #1fb7a9;
+  --shadow: 0 20px 36px rgba(0, 0, 0, 0.7);
+  --shadow-soft: 0 10px 20px rgba(0, 0, 0, 0.55);
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+  --canvas-bg: #0b0b0c;
+  --canvas-grid: rgba(255, 255, 255, 0.025);
+  --canvas-grid-strong: rgba(255, 255, 255, 0.04);
+  --canvas-grid-size: 28px;
+  --font-display: 'Sora', 'Manrope', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+}
+
+body.app-dark {
+  --p-primary-50: #eff4ff;
+  --p-primary-100: #dbe7ff;
+  --p-primary-200: #bcd3ff;
+  --p-primary-300: #8fb4ff;
+  --p-primary-400: #5b8dff;
+  --p-primary-500: #3b6fff;
+  --p-primary-600: #2f59d9;
+  --p-primary-700: #2546ae;
+  --p-primary-800: #1c3585;
+  --p-primary-900: #15285f;
+  --p-primary-950: #0d1838;
+  --p-surface-0: #0d0d0e;
+  --p-surface-50: #111113;
+  --p-surface-100: #141416;
+  --p-surface-200: #19191c;
+  --p-surface-300: #212126;
+  --p-surface-400: #2b2b32;
+  --p-surface-500: #3a3a44;
+  --p-surface-600: #4b4b58;
+  --p-surface-700: #60606f;
+  --p-surface-800: #78788a;
+  --p-surface-900: #9595a6;
+  --p-surface-950: #b8b8c6;
+  --p-border-radius-xs: 2px;
+  --p-border-radius-sm: 3px;
+  --p-border-radius-md: 4px;
+  --p-border-radius-lg: 6px;
+  --p-border-radius-xl: 8px;
+  --p-button-border-radius: var(--p-border-radius-sm);
+  --p-inputtext-border-radius: var(--p-border-radius-sm);
+  --p-textarea-border-radius: var(--p-border-radius-sm);
+  --p-tag-border-radius: var(--p-border-radius-sm);
+  --p-avatar-border-radius: var(--p-border-radius-sm);
+  --p-panel-border-radius: var(--p-border-radius-md);
+  --p-card-border-radius: var(--p-border-radius-md);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.is-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+textarea {
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0d11;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1f27;
+  border-radius: 6px;
+}

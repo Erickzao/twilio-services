@@ -1,0 +1,259 @@
+<div class="flow-app">
+  <header class="topbar">
+    <div class="topbar__left">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-bars"
+        class="topbar__icon-btn"
+        aria-label="Toggle menu"
+      ></button>
+      <div class="brand">
+        <p-avatar label="FS" shape="square" class="brand__mark"></p-avatar>
+        <div>
+          <div class="brand__title">Flow Studio</div>
+          <div class="brand__subtitle">Automation workspace</div>
+        </div>
+      </div>
+      <p-tag value="Support Intake" severity="info" class="topbar__pill"></p-tag>
+    </div>
+
+    <div class="topbar__center">
+      <div class="search">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search"></p-inputicon>
+          <input pInputText type="text" placeholder="Search or jump" />
+        </p-iconfield>
+        <kbd>Ctrl K</kbd>
+      </div>
+    </div>
+
+    <div class="topbar__right">
+      <button pButton type="button" label="Share" icon="pi pi-share-alt" class="topbar__action" text></button>
+      <button pButton type="button" label="Save" icon="pi pi-save" class="topbar__action" outlined></button>
+      <button
+        pButton
+        type="button"
+        label="Publish"
+        icon="pi pi-send"
+        class="topbar__action topbar__action--primary"
+      ></button>
+      <p-avatar label="CS" shape="square" class="topbar__avatar"></p-avatar>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="rail">
+      <p-avatar label="CU" shape="square" class="rail__logo"></p-avatar>
+      <button pButton type="button" icon="pi pi-th-large" class="rail__item is-active" text></button>
+      <button pButton type="button" icon="pi pi-sitemap" class="rail__item" text></button>
+      <button pButton type="button" icon="pi pi-inbox" class="rail__item" text></button>
+      <button pButton type="button" icon="pi pi-plus" class="rail__item" text></button>
+      <div class="rail__spacer"></div>
+      <button pButton type="button" icon="pi pi-sliders-h" class="rail__item" text></button>
+      <button pButton type="button" icon="pi pi-question-circle" class="rail__item" text></button>
+    </aside>
+
+    <aside class="panel panel--left">
+      <div class="panel__header">
+        <div>
+          <h3>Node Library</h3>
+          <p>Drag ideas into the flow.</p>
+        </div>
+        <p-tag [value]="nodes.length + ' nodes'" severity="secondary" class="panel__pill"></p-tag>
+      </div>
+
+      <div class="panel__search">
+        <p-iconfield iconPosition="left">
+          <p-inputicon class="pi pi-search"></p-inputicon>
+          <input pInputText type="text" placeholder="Search nodes" />
+        </p-iconfield>
+      </div>
+
+      <div class="library">
+        @for (item of nodeLibrary; track item.type) {
+          <button pButton type="button" class="library-card" (click)="addNode(item.type)">
+            <div class="library-card__icon" [ngClass]="'tone-' + item.type">
+              <i class="pi" [ngClass]="nodeTypeIcons[item.type]"></i>
+            </div>
+            <div class="library-card__content">
+              <div class="library-card__title">{{ item.label }}</div>
+              <div class="library-card__detail">{{ item.detail }}</div>
+            </div>
+            <span class="library-card__cta">
+              <i class="pi pi-plus"></i>
+            </span>
+          </button>
+        }
+      </div>
+
+      <div class="panel__section">
+        <div class="panel__section-title">
+          <span>Flow outline</span>
+          <p-tag value="Live" severity="success" class="panel__pill"></p-tag>
+        </div>
+        <div class="outline">
+          @for (node of nodes; track node.id) {
+            <button
+              pButton
+              type="button"
+              class="outline-item"
+              text
+              [class.is-active]="node.id === selectedNodeId"
+              (click)="selectNode(node.id)"
+            >
+              <span class="outline-item__dot" [ngClass]="'tone-' + node.type"></span>
+              <span class="outline-item__title">{{ node.title }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </aside>
+
+    <section class="canvas-shell" (pointerdown)="onCanvasPointerDown($event)" (wheel)="onWheel($event)">
+      <div class="canvas-toolbar">
+        <div>
+          <div class="canvas-title">Support Intake</div>
+          <div class="canvas-subtitle">{{ nodes.length }} steps · 1 draft branch</div>
+        </div>
+        <div class="canvas-actions">
+          <button
+            pButton
+            type="button"
+            label="Auto layout"
+            icon="pi pi-sitemap"
+            class="canvas-action"
+            outlined
+          ></button>
+          <button pButton type="button" label="Preview" icon="pi pi-eye" class="canvas-action" text></button>
+        </div>
+      </div>
+
+      <div class="canvas-viewport" #viewport>
+        <div
+          class="canvas-stage"
+          [style.transform]="canvasTransform"
+          [style.width.px]="canvasSize.width"
+          [style.height.px]="canvasSize.height"
+        >
+          <div class="canvas-grid"></div>
+
+          <svg
+            class="edges"
+            [attr.viewBox]="'0 0 ' + canvasSize.width + ' ' + canvasSize.height"
+            [attr.width]="canvasSize.width"
+            [attr.height]="canvasSize.height"
+          >
+            @for (edge of edges; track edge.id) {
+              <path class="edge-path" [attr.d]="getEdgePath(edge)"></path>
+            }
+          </svg>
+
+          @for (node of nodes; track node.id; let i = $index) {
+            <article
+              class="node"
+              [class.node--start]="node.type === 'start'"
+              [class.node--message]="node.type === 'message'"
+              [class.node--question]="node.type === 'question'"
+              [class.node--transfer]="node.type === 'transfer'"
+              [class.is-selected]="node.id === selectedNodeId"
+              [style.left.px]="node.x"
+              [style.top.px]="node.y"
+              [style.animation-delay.ms]="i * 60"
+              (pointerdown)="onNodePointerDown($event, node)"
+            >
+              <div class="node__port node__port--in"></div>
+              <div class="node__port node__port--out"></div>
+              <div class="node__header">
+                <p-tag
+                  [value]="nodeTypeMeta[node.type].short"
+                  class="node__badge"
+                  [ngClass]="'tone-' + node.type"
+                ></p-tag>
+                <div class="node__title">{{ node.title }}</div>
+                <span class="node__type">{{ nodeTypeMeta[node.type].label }}</span>
+              </div>
+              <div class="node__body">{{ node.body }}</div>
+              <div class="node__footer">
+                <p-tag [value]="node.meta" severity="secondary" class="node__meta"></p-tag>
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-plus"
+                  class="node__action"
+                  text
+                  (click)="$event.stopPropagation()"
+                  (pointerdown)="$event.stopPropagation()"
+                ></button>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+
+      <div class="canvas-controls">
+        <button pButton type="button" icon="pi pi-minus" class="canvas-control" text (click)="zoomOut()"></button>
+        <p-tag [value]="zoomLabel" severity="secondary" class="zoom-label"></p-tag>
+        <button pButton type="button" icon="pi pi-plus" class="canvas-control" text (click)="zoomIn()"></button>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          label="Reset"
+          class="canvas-control canvas-control--wide"
+          outlined
+          (click)="zoomReset()"
+        ></button>
+      </div>
+    </section>
+
+    <aside class="panel panel--right">
+      <div class="panel__header">
+        <div>
+          <h3>Inspector</h3>
+          <p>Adjust node details.</p>
+        </div>
+        <p-tag value="Live" severity="success" class="panel__pill"></p-tag>
+      </div>
+
+      @if (selectedNode; as node) {
+        <div class="inspector">
+          <div class="field">
+            <label for="node-title">Title</label>
+            <input id="node-title" pInputText type="text" [value]="node.title" (input)="updateSelected('title', $event)" />
+          </div>
+          <div class="field">
+            <label for="node-message">Message</label>
+            <textarea
+              id="node-message"
+              pTextarea
+              rows="4"
+              [value]="node.body"
+              (input)="updateSelected('body', $event)"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label for="node-meta">Meta</label>
+            <input id="node-meta" pInputText type="text" [value]="node.meta" (input)="updateSelected('meta', $event)" />
+          </div>
+          <div class="field">
+            <label>Node type</label>
+            <p-tag [value]="nodeTypeMeta[node.type].label" severity="info" class="pill"></p-tag>
+          </div>
+          <div class="inspector__footer">
+            <button pButton type="button" label="Duplicate" icon="pi pi-copy" class="inspector__action" outlined></button>
+            <button pButton type="button" label="Archive" icon="pi pi-trash" class="inspector__action" text></button>
+          </div>
+        </div>
+      } @else {
+        <div class="empty">
+          <div class="empty__title">Select a node</div>
+          <p>Pick any block on the canvas to edit its content.</p>
+        </div>
+      }
+    </aside>
+  </div>
+</div>
+
+
+
