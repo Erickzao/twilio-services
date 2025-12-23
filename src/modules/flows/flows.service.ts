@@ -1,3 +1,12 @@
+import { createHash } from 'node:crypto';
+import { twilioCacheRepository } from '@/modules/twilio-cache/twilio-cache.repository';
+import { createLogger } from '@/shared/utils/logger';
+import { flowBuilder } from './flows.builder';
+import { twilioContentClient } from './flows.content';
+import { flowsRepository } from './flows.repository';
+import type { TaskRouterTaskChannel, TaskRouterWorkflow } from './flows.taskrouter';
+import { twilioTaskRouterClient } from './flows.taskrouter';
+import { twilioStudioClient } from './flows.twilio';
 import type {
   Flow,
   FlowInput,
@@ -6,21 +15,9 @@ import type {
   FlowPublishResult,
   FlowUpdateInput,
   TwilioFlowDefinition,
-} from "./flows.types";
-import { flowBuilder } from "./flows.builder";
-import { flowsRepository } from "./flows.repository";
-import { twilioStudioClient } from "./flows.twilio";
-import { twilioContentClient } from "./flows.content";
-import { createLogger } from "@/shared/utils/logger";
-import { createHash } from "crypto";
-import { twilioCacheRepository } from "@/modules/twilio-cache/twilio-cache.repository";
-import type {
-  TaskRouterTaskChannel,
-  TaskRouterWorkflow,
-} from "./flows.taskrouter";
-import { twilioTaskRouterClient } from "./flows.taskrouter";
+} from './flows.types';
 
-const logger = createLogger("FlowsService");
+const logger = createLogger('FlowsService');
 
 export class FlowsService {
   private getTwilioCacheTtlMs(): number {
@@ -47,16 +44,16 @@ export class FlowsService {
     try {
       await twilioCacheRepository.set(key, JSON.stringify(value));
     } catch (err) {
-      const message = err instanceof Error ? err.message : "unknown error";
+      const message = err instanceof Error ? err.message : 'unknown error';
       logger.warn(`Failed to write Twilio cache "${key}": ${message}`);
     }
   }
 
   private buildContentTemplateCacheKey(
-    templateType: "quick-reply" | "list-picker",
+    templateType: 'quick-reply' | 'list-picker',
     body: string,
     buttons: Array<{ id: string; label: string; value: string }>,
-    language = "pt_BR",
+    language = 'pt_BR',
   ): string {
     const normalized = JSON.stringify({
       templateType,
@@ -69,14 +66,11 @@ export class FlowsService {
       })),
     });
 
-    const hash = createHash("sha256").update(normalized).digest("hex");
+    const hash = createHash('sha256').update(normalized).digest('hex');
     return `content-template:${templateType}:${hash}`;
   }
 
-  async getTaskRouterWorkflows(options?: {
-    refresh?: boolean;
-    limit?: number;
-  }): Promise<{
+  async getTaskRouterWorkflows(options?: { refresh?: boolean; limit?: number }): Promise<{
     workspaceSid: string;
     workflows: TaskRouterWorkflow[];
     cached: boolean;
@@ -85,7 +79,7 @@ export class FlowsService {
     const workspaceSid = await twilioTaskRouterClient.resolveWorkspaceSid();
     if (!workspaceSid) {
       throw new Error(
-        "Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.",
+        'Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.',
       );
     }
 
@@ -121,10 +115,7 @@ export class FlowsService {
     };
   }
 
-  async getTaskRouterTaskChannels(options?: {
-    refresh?: boolean;
-    limit?: number;
-  }): Promise<{
+  async getTaskRouterTaskChannels(options?: { refresh?: boolean; limit?: number }): Promise<{
     workspaceSid: string;
     taskChannels: TaskRouterTaskChannel[];
     cached: boolean;
@@ -133,7 +124,7 @@ export class FlowsService {
     const workspaceSid = await twilioTaskRouterClient.resolveWorkspaceSid();
     if (!workspaceSid) {
       throw new Error(
-        "Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.",
+        'Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.',
       );
     }
 
@@ -141,8 +132,7 @@ export class FlowsService {
     const ttlMs = this.getTwilioCacheTtlMs();
 
     if (!options?.refresh) {
-      const cached =
-        await this.getCachedJson<TaskRouterTaskChannel[]>(cacheKey);
+      const cached = await this.getCachedJson<TaskRouterTaskChannel[]>(cacheKey);
       if (cached) {
         const age = Date.now() - cached.updatedAt.getTime();
         if (age >= 0 && age < ttlMs) {
@@ -156,9 +146,7 @@ export class FlowsService {
       }
     }
 
-    const result = await twilioTaskRouterClient.listTaskChannels(
-      options?.limit,
-    );
+    const result = await twilioTaskRouterClient.listTaskChannels(options?.limit);
     if (!result.success) {
       throw new Error(result.error);
     }
@@ -172,18 +160,12 @@ export class FlowsService {
     };
   }
 
-  async listContentTemplates(options?: {
-    refresh?: boolean;
-    pageSize?: number;
-  }): Promise<{
+  async listContentTemplates(options?: { refresh?: boolean; pageSize?: number }): Promise<{
     templates: unknown[];
     cached: boolean;
     cachedAt?: Date;
   }> {
-    const pageSize = Math.min(
-      Math.max(Math.floor(options?.pageSize ?? 50), 1),
-      200,
-    );
+    const pageSize = Math.min(Math.max(Math.floor(options?.pageSize ?? 50), 1), 200);
     const cacheKey = `content-templates:list:${pageSize}`;
     const ttlMs = this.getTwilioCacheTtlMs();
 
@@ -203,7 +185,7 @@ export class FlowsService {
 
     const result = await twilioContentClient.listTemplates(pageSize);
     if (!result.success || !result.templates) {
-      throw new Error(result.error || "Failed to list content templates");
+      throw new Error(result.error || 'Failed to list content templates');
     }
 
     await this.setCachedJson(cacheKey, result.templates);
@@ -236,10 +218,7 @@ export class FlowsService {
     if (!existing) return null;
 
     if (input.nodes) {
-      this.validateNodes(
-        input.nodes,
-        input.startNodeId || existing.start_node_id,
-      );
+      this.validateNodes(input.nodes, input.startNodeId || existing.start_node_id);
     }
 
     return flowsRepository.update(id, input);
@@ -251,9 +230,7 @@ export class FlowsService {
 
     // Se o flow está publicado na Twilio, deletar lá também
     if (existing.twilio_flow_sid) {
-      const result = await twilioStudioClient.deleteFlow(
-        existing.twilio_flow_sid,
-      );
+      const result = await twilioStudioClient.deleteFlow(existing.twilio_flow_sid);
       if (!result.success) {
         throw new Error(`Failed to delete flow from Twilio: ${result.error}`);
       }
@@ -281,16 +258,15 @@ export class FlowsService {
   async publish(id: string): Promise<FlowPublishResult> {
     const flow = await flowsRepository.findById(id);
     if (!flow) {
-      return { success: false, error: "Flow not found" };
+      return { success: false, error: 'Flow not found' };
     }
 
     if (!twilioStudioClient.isConfigured()) {
-      return { success: false, error: "Twilio credentials not configured" };
+      return { success: false, error: 'Twilio credentials not configured' };
     }
 
     // Criar Content Templates automaticamente para nodes com botões
-    const nodesWithTemplates =
-      await this.createContentTemplatesForButtons(flow);
+    const nodesWithTemplates = await this.createContentTemplatesForButtons(flow);
 
     // Criar uma cópia do flow com os Content Template SIDs
     const flowWithTemplates: Flow = {
@@ -301,20 +277,17 @@ export class FlowsService {
     const definition = flowBuilder.build(flowWithTemplates);
 
     // Validar antes de publicar
-    const validation = await twilioStudioClient.validateFlow(
-      flow.name,
-      definition,
-    );
+    const validation = await twilioStudioClient.validateFlow(flow.name, definition);
     if (!validation.valid) {
       await flowsRepository.updateStatus(
         id,
-        "error",
+        'error',
         undefined,
-        validation.errors?.join(", ") || "Validation failed",
+        validation.errors?.join(', ') || 'Validation failed',
       );
       return {
         success: false,
-        error: validation.errors?.join(", ") || "Validation failed",
+        error: validation.errors?.join(', ') || 'Validation failed',
       };
     }
 
@@ -325,7 +298,7 @@ export class FlowsService {
       const updateResult = await twilioStudioClient.updateFlow(
         flow.twilio_flow_sid,
         definition,
-        "published",
+        'published',
         `Published at ${new Date().toISOString()}`,
       );
       result = {
@@ -335,26 +308,17 @@ export class FlowsService {
       };
     } else {
       // Criar novo flow
-      result = await twilioStudioClient.createFlow(
-        flow.name,
-        definition,
-        "published",
-      );
+      result = await twilioStudioClient.createFlow(flow.name, definition, 'published');
     }
 
     if (result.success && result.flowSid) {
       // Atualizar os nodes com os Content Template SIDs no banco
       await flowsRepository.update(id, { nodes: nodesWithTemplates });
-      await flowsRepository.updateStatus(id, "published", result.flowSid);
+      await flowsRepository.updateStatus(id, 'published', result.flowSid);
       return { success: true, twilioFlowSid: result.flowSid };
     }
 
-    await flowsRepository.updateStatus(
-      id,
-      "error",
-      flow.twilio_flow_sid,
-      result.error,
-    );
+    await flowsRepository.updateStatus(id, 'error', flow.twilio_flow_sid, result.error);
     return { success: false, error: result.error };
   }
 
@@ -362,15 +326,13 @@ export class FlowsService {
    * Cria Content Templates na Twilio para todos os nodes do tipo 'buttons'
    * que ainda não têm um contentTemplateSid definido.
    */
-  private async createContentTemplatesForButtons(
-    flow: Flow,
-  ): Promise<FlowNode[]> {
+  private async createContentTemplatesForButtons(flow: Flow): Promise<FlowNode[]> {
     const updatedNodes: FlowNode[] = [];
 
     for (const node of flow.nodes) {
       // Se é um node de botões e não tem Content Template ainda
       if (
-        node.type === "buttons" &&
+        node.type === 'buttons' &&
         node.buttons &&
         node.buttons.length > 0 &&
         !node.contentTemplateSid
@@ -384,14 +346,12 @@ export class FlowsService {
           }));
 
           const cacheKey = this.buildContentTemplateCacheKey(
-            "quick-reply",
+            'quick-reply',
             node.content,
             templateButtons,
           );
 
-          const cached = await this.getCachedJson<{ contentSid: string }>(
-            cacheKey,
-          );
+          const cached = await this.getCachedJson<{ contentSid: string }>(cacheKey);
           const cachedSid = cached?.value?.contentSid;
           if (cachedSid) {
             updatedNodes.push({
@@ -403,9 +363,7 @@ export class FlowsService {
 
           const templateName = `${flow.name}_${node.id}_buttons_${cacheKey.slice(-8)}`;
 
-          logger.log(
-            `Creating Content Template for node "${node.id}": ${templateName}`,
-          );
+          logger.log(`Creating Content Template for node "${node.id}": ${templateName}`);
 
           const result = await twilioContentClient.createQuickReplyTemplate(
             templateName,
@@ -417,7 +375,7 @@ export class FlowsService {
             logger.log(`Content Template created: ${result.contentSid}`);
             await this.setCachedJson(cacheKey, {
               contentSid: result.contentSid,
-              templateType: "quick-reply",
+              templateType: 'quick-reply',
               templateName,
               nodeId: node.id,
               flowName: flow.name,
@@ -428,10 +386,8 @@ export class FlowsService {
             });
           } else {
             // Se falhar, continuar sem Content Template (fallback para texto)
-            logger.warn(
-              `Failed to create Content Template for node "${node.id}": ${result.error}`,
-            );
-            logger.warn("Falling back to text-based buttons");
+            logger.warn(`Failed to create Content Template for node "${node.id}": ${result.error}`);
+            logger.warn('Falling back to text-based buttons');
             updatedNodes.push(node);
           }
         } else {
@@ -443,14 +399,12 @@ export class FlowsService {
             }));
 
             const cacheKey = this.buildContentTemplateCacheKey(
-              "list-picker",
+              'list-picker',
               node.content,
               templateButtons,
             );
 
-            const cached = await this.getCachedJson<{ contentSid: string }>(
-              cacheKey,
-            );
+            const cached = await this.getCachedJson<{ contentSid: string }>(cacheKey);
             const cachedSid = cached?.value?.contentSid;
             if (cachedSid) {
               updatedNodes.push({
@@ -476,7 +430,7 @@ export class FlowsService {
               logger.log(`Content Template created: ${result.contentSid}`);
               await this.setCachedJson(cacheKey, {
                 contentSid: result.contentSid,
-                templateType: "list-picker",
+                templateType: 'list-picker',
                 templateName,
                 nodeId: node.id,
                 flowName: flow.name,
@@ -488,15 +442,11 @@ export class FlowsService {
               continue;
             }
 
-            logger.warn(
-              `Failed to create Content Template for node "${node.id}": ${result.error}`,
-            );
-            logger.warn("Falling back to text-based buttons");
+            logger.warn(`Failed to create Content Template for node "${node.id}": ${result.error}`);
+            logger.warn('Falling back to text-based buttons');
           }
           // Mais de 3 botões: usar fallback de texto
-          logger.warn(
-            `Node "${node.id}" has ${node.buttons.length} buttons. Using text fallback.`,
-          );
+          logger.warn(`Node "${node.id}" has ${node.buttons.length} buttons. Using text fallback.`);
           updatedNodes.push(node);
         }
       } else {
@@ -511,24 +461,21 @@ export class FlowsService {
   async unpublish(id: string): Promise<FlowPublishResult> {
     const flow = await flowsRepository.findById(id);
     if (!flow) {
-      return { success: false, error: "Flow not found" };
+      return { success: false, error: 'Flow not found' };
     }
 
     if (!flow.twilio_flow_sid) {
-      return { success: false, error: "Flow is not published on Twilio" };
+      return { success: false, error: 'Flow is not published on Twilio' };
     }
 
     if (!twilioStudioClient.isConfigured()) {
-      return { success: false, error: "Twilio credentials not configured" };
+      return { success: false, error: 'Twilio credentials not configured' };
     }
 
-    const result = await twilioStudioClient.setFlowStatus(
-      flow.twilio_flow_sid,
-      "draft",
-    );
+    const result = await twilioStudioClient.setFlowStatus(flow.twilio_flow_sid, 'draft');
 
     if (result.success) {
-      await flowsRepository.updateStatus(id, "draft");
+      await flowsRepository.updateStatus(id, 'draft');
       return { success: true, twilioFlowSid: flow.twilio_flow_sid };
     }
 
@@ -538,11 +485,11 @@ export class FlowsService {
   async validate(id: string): Promise<{ valid: boolean; errors?: string[] }> {
     const flow = await flowsRepository.findById(id);
     if (!flow) {
-      return { valid: false, errors: ["Flow not found"] };
+      return { valid: false, errors: ['Flow not found'] };
     }
 
     if (!twilioStudioClient.isConfigured()) {
-      return { valid: false, errors: ["Twilio credentials not configured"] };
+      return { valid: false, errors: ['Twilio credentials not configured'] };
     }
 
     const definition = flowBuilder.build(flow);
@@ -551,21 +498,21 @@ export class FlowsService {
 
   private validateFlowInput(input: FlowInput): void {
     if (!input.name || input.name.trim().length === 0) {
-      throw new Error("Flow name is required");
+      throw new Error('Flow name is required');
     }
 
     if (!input.nodes || input.nodes.length === 0) {
-      throw new Error("Flow must have at least one node");
+      throw new Error('Flow must have at least one node');
     }
 
     if (!input.startNodeId) {
-      throw new Error("Start node ID is required");
+      throw new Error('Start node ID is required');
     }
 
     this.validateNodes(input.nodes, input.startNodeId);
   }
 
-  private validateNodes(nodes: FlowInput["nodes"], startNodeId: string): void {
+  private validateNodes(nodes: FlowInput['nodes'], startNodeId: string): void {
     const nodeIds = new Set(nodes.map((n) => n.id));
 
     // Verificar se startNodeId existe
@@ -576,9 +523,7 @@ export class FlowsService {
     // Verificar referências de nextNodeId
     for (const node of nodes) {
       if (node.nextNodeId && !nodeIds.has(node.nextNodeId)) {
-        throw new Error(
-          `Node "${node.id}" references non-existent node "${node.nextNodeId}"`,
-        );
+        throw new Error(`Node "${node.id}" references non-existent node "${node.nextNodeId}"`);
       }
 
       // Verificar referências em buttons
@@ -595,7 +540,7 @@ export class FlowsService {
 
     // Verificar IDs duplicados
     if (nodeIds.size !== nodes.length) {
-      throw new Error("Duplicate node IDs found");
+      throw new Error('Duplicate node IDs found');
     }
   }
 }

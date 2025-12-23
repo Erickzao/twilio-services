@@ -1,9 +1,9 @@
-import { Elysia, t } from "elysia";
-import { tasksService } from "./tasks.service";
+import { Elysia, t } from 'elysia';
+import { tasksService } from './tasks.service';
 
-export const tasksController = new Elysia({ prefix: "/tasks" })
+export const tasksController = new Elysia({ prefix: '/tasks' })
   .post(
-    "/",
+    '/',
     async ({ body, set }) => {
       const task = await tasksService.create(body);
       set.status = 201;
@@ -15,13 +15,13 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         customerContact: t.String({ minLength: 1 }),
       }),
       detail: {
-        summary: "Create a new task",
-        tags: ["Tasks"],
+        summary: 'Create a new task',
+        tags: ['Tasks'],
       },
     },
   )
   .get(
-    "/",
+    '/',
     async ({ query }) => {
       const tasks = await tasksService.list({
         limit: query.limit,
@@ -35,26 +35,22 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         limit: t.Optional(t.Numeric({ default: 100 })),
         operatorId: t.Optional(t.String()),
         status: t.Optional(
-          t.Union([
-            t.Literal("open"),
-            t.Literal("assigned"),
-            t.Literal("closed"),
-          ]),
+          t.Union([t.Literal('open'), t.Literal('assigned'), t.Literal('closed')]),
         ),
       }),
       detail: {
-        summary: "List tasks",
-        tags: ["Tasks"],
+        summary: 'List tasks',
+        tags: ['Tasks'],
       },
     },
   )
   .get(
-    "/:id",
+    '/:id',
     async ({ params, set }) => {
       const task = await tasksService.getById(params.id);
       if (!task) {
         set.status = 404;
-        return { message: "Task not found" };
+        return { message: 'Task not found' };
       }
       return { data: task };
     },
@@ -63,25 +59,20 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         id: t.String(),
       }),
       detail: {
-        summary: "Get task by ID",
-        tags: ["Tasks"],
+        summary: 'Get task by ID',
+        tags: ['Tasks'],
       },
     },
   )
   .post(
-    "/:id/assign",
+    '/:id/assign',
     async ({ params, body, set }) => {
       try {
-        const task = await tasksService.assign(
-          params.id,
-          body.operatorId,
-          body.operatorName,
-        );
+        const task = await tasksService.assign(params.id, body.operatorId, body.operatorName);
         return { data: task };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to assign task";
+        const message = err instanceof Error ? err.message : 'Failed to assign task';
         return { message };
       }
     },
@@ -94,13 +85,13 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         operatorName: t.String({ minLength: 1 }),
       }),
       detail: {
-        summary: "Assign task to an operator",
-        tags: ["Tasks"],
+        summary: 'Assign task to an operator',
+        tags: ['Tasks'],
       },
     },
   )
   .post(
-    "/:id/handoff",
+    '/:id/handoff',
     async ({ params, body, set }) => {
       try {
         const task = await tasksService.startOperatorHandoff(
@@ -114,10 +105,7 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         return { data: task };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Failed to start operator handoff";
+        const message = err instanceof Error ? err.message : 'Failed to start operator handoff';
         return { message };
       }
     },
@@ -131,21 +119,20 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         sendGreeting: t.Optional(t.Boolean()),
       }),
       detail: {
-        summary: "Send handoff message and start inactivity timers",
-        tags: ["Tasks"],
+        summary: 'Send handoff message and start inactivity timers',
+        tags: ['Tasks'],
       },
     },
   )
   .post(
-    "/:id/greeting",
+    '/:id/greeting',
     async ({ params, set }) => {
       try {
         const task = await tasksService.registerOperatorGreeting(params.id);
         return { data: task };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to register greeting";
+        const message = err instanceof Error ? err.message : 'Failed to register greeting';
         return { message };
       }
     },
@@ -154,23 +141,20 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         id: t.String(),
       }),
       detail: {
-        summary: "Register greeting (already sent) and start inactivity timers",
-        tags: ["Tasks"],
+        summary: 'Register greeting (already sent) and start inactivity timers',
+        tags: ['Tasks'],
       },
     },
   )
   .post(
-    "/:id/activity",
+    '/:id/activity',
     async ({ params, set }) => {
       try {
         const task = await tasksService.markCustomerActivity(params.id);
         return { data: task };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Failed to mark customer activity";
+        const message = err instanceof Error ? err.message : 'Failed to mark customer activity';
         return { message };
       }
     },
@@ -179,19 +163,19 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         id: t.String(),
       }),
       detail: {
-        summary: "Mark customer activity (cancels inactivity timers)",
-        tags: ["Tasks"],
+        summary: 'Mark customer activity (cancels inactivity timers)',
+        tags: ['Tasks'],
       },
     },
   )
   .post(
-    "/twilio/inbound",
+    '/twilio/inbound',
     async ({ request, set }) => {
       const raw = await request.text();
 
-      let from = "";
-      let conversationSid = "";
-      let author = "";
+      let from = '';
+      let conversationSid = '';
+      let author = '';
 
       try {
         const json = JSON.parse(raw) as {
@@ -202,15 +186,14 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
           Author?: string;
           author?: string;
         };
-        from = json.From || json.from || "";
-        conversationSid = json.ConversationSid || json.conversationSid || "";
-        author = json.Author || json.author || "";
+        from = json.From || json.from || '';
+        conversationSid = json.ConversationSid || json.conversationSid || '';
+        author = json.Author || json.author || '';
       } catch {
         const params = new URLSearchParams(raw);
-        from = params.get("From") || params.get("from") || "";
-        conversationSid =
-          params.get("ConversationSid") || params.get("conversationSid") || "";
-        author = params.get("Author") || params.get("author") || "";
+        from = params.get('From') || params.get('from') || '';
+        conversationSid = params.get('ConversationSid') || params.get('conversationSid') || '';
+        author = params.get('Author') || params.get('author') || '';
       }
 
       if (conversationSid) {
@@ -230,13 +213,13 @@ export const tasksController = new Elysia({ prefix: "/tasks" })
         }
       }
 
-      set.headers["content-type"] = "text/xml; charset=utf-8";
-      return "<Response></Response>";
+      set.headers['content-type'] = 'text/xml; charset=utf-8';
+      return '<Response></Response>';
     },
     {
       detail: {
-        summary: "Twilio inbound webhook (marks activity)",
-        tags: ["Tasks"],
+        summary: 'Twilio inbound webhook (marks activity)',
+        tags: ['Tasks'],
       },
     },
   );

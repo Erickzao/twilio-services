@@ -1,1 +1,1 @@
-export { dbAdminController } from "./db-admin.controller";
+export { dbAdminController } from './db-admin.controller';

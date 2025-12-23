@@ -1,7 +1,4 @@
-export function operatorHandoffMessage(
-  customerName: string,
-  operatorName: string,
-): string {
+export function operatorHandoffMessage(customerName: string, operatorName: string): string {
   return `Ol\u00e1, ${customerName}. Meu nome \u00e9 ${operatorName} e irei dar continuidade ao seu atendimento.\u{1F609}\u2764`;
 }
 

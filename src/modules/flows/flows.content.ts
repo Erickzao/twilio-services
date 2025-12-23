@@ -1,6 +1,6 @@
-import { createLogger } from "@/shared/utils/logger";
+import { createLogger } from '@/shared/utils/logger';
 
-const logger = createLogger("TwilioContent");
+const logger = createLogger('TwilioContent');
 
 interface ContentConfig {
   accountSid: string;
@@ -41,19 +41,19 @@ interface DeleteContentResult {
 
 export class TwilioContentClient {
   private config: ContentConfig;
-  private baseUrl = "https://content.twilio.com/v1";
+  private baseUrl = 'https://content.twilio.com/v1';
 
   constructor() {
     this.config = {
-      accountSid: process.env.TWILIO_ACCOUNT_SID || "",
-      authToken: process.env.TWILIO_AUTH_TOKEN || "",
+      accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+      authToken: process.env.TWILIO_AUTH_TOKEN || '',
     };
   }
 
   private getAuthHeader(): string {
-    const credentials = Buffer.from(
-      `${this.config.accountSid}:${this.config.authToken}`,
-    ).toString("base64");
+    const credentials = Buffer.from(`${this.config.accountSid}:${this.config.authToken}`).toString(
+      'base64',
+    );
     return `Basic ${credentials}`;
   }
 
@@ -64,12 +64,12 @@ export class TwilioContentClient {
     friendlyName: string,
     bodyText: string,
     buttons: Array<{ id: string; label: string; value: string }>,
-    language = "pt_BR",
+    language = 'pt_BR',
   ): Promise<CreateContentResult> {
     if (!this.config.accountSid || !this.config.authToken) {
       return {
         success: false,
-        error: "Twilio credentials not configured.",
+        error: 'Twilio credentials not configured.',
       };
     }
 
@@ -77,14 +77,14 @@ export class TwilioContentClient {
     if (buttons.length > 3) {
       return {
         success: false,
-        error: "Quick-reply templates support a maximum of 3 buttons.",
+        error: 'Quick-reply templates support a maximum of 3 buttons.',
       };
     }
 
     if (buttons.length === 0) {
       return {
         success: false,
-        error: "At least one button is required.",
+        error: 'At least one button is required.',
       };
     }
 
@@ -97,11 +97,11 @@ export class TwilioContentClient {
       friendly_name: friendlyName,
       language,
       types: {
-        "twilio/quick-reply": {
+        'twilio/quick-reply': {
           body: bodyText,
           actions,
         },
-        "twilio/text": {
+        'twilio/text': {
           body: bodyText, // Fallback para canais que não suportam quick-reply
         },
       },
@@ -109,10 +109,10 @@ export class TwilioContentClient {
 
     try {
       const response = await fetch(`${this.baseUrl}/Content`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: this.getAuthHeader(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       });
@@ -121,9 +121,7 @@ export class TwilioContentClient {
         const errorData = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        const errorMessage =
-          errorData.message ||
-          `HTTP ${response.status}: ${response.statusText}`;
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
         logger.error(`Failed to create content template: ${errorMessage}`);
         logger.error(`Response: ${JSON.stringify(errorData)}`);
 
@@ -141,8 +139,7 @@ export class TwilioContentClient {
         contentSid: data.sid,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to create content template: ${errorMessage}`);
 
       return {
@@ -156,12 +153,12 @@ export class TwilioContentClient {
     friendlyName: string,
     bodyText: string,
     buttons: Array<{ id: string; label: string; value: string }>,
-    language = "pt_BR",
+    language = 'pt_BR',
   ): Promise<CreateContentResult> {
     if (!this.config.accountSid || !this.config.authToken) {
       return {
         success: false,
-        error: "Twilio credentials not configured.",
+        error: 'Twilio credentials not configured.',
       };
     }
 
@@ -177,7 +174,7 @@ export class TwilioContentClient {
     if (buttons.length === 0) {
       return {
         success: false,
-        error: "At least one button is required.",
+        error: 'At least one button is required.',
       };
     }
 
@@ -192,13 +189,13 @@ export class TwilioContentClient {
       friendly_name: friendlyName,
       language,
       types: {
-        "twilio/list-picker": {
+        'twilio/list-picker': {
           body: bodyText,
-          button: "Selecione uma opcao",
+          button: 'Selecione uma opcao',
           items,
           multiple_selection: null,
         },
-        "twilio/text": {
+        'twilio/text': {
           body: bodyText,
         },
       },
@@ -206,10 +203,10 @@ export class TwilioContentClient {
 
     try {
       const response = await fetch(`${this.baseUrl}/Content`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: this.getAuthHeader(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
       });
@@ -218,9 +215,7 @@ export class TwilioContentClient {
         const errorData = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        const errorMessage =
-          errorData.message ||
-          `HTTP ${response.status}: ${response.statusText}`;
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
         logger.error(`Failed to create list-picker template: ${errorMessage}`);
         logger.error(`Response: ${JSON.stringify(errorData)}`);
 
@@ -238,8 +233,7 @@ export class TwilioContentClient {
         contentSid: data.sid,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to create list-picker template: ${errorMessage}`);
 
       return {
@@ -256,13 +250,13 @@ export class TwilioContentClient {
     if (!this.config.accountSid || !this.config.authToken) {
       return {
         success: false,
-        error: "Twilio credentials not configured.",
+        error: 'Twilio credentials not configured.',
       };
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/Content/${contentSid}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: {
           Authorization: this.getAuthHeader(),
         },
@@ -272,9 +266,7 @@ export class TwilioContentClient {
         const errorData = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        const errorMessage =
-          errorData.message ||
-          `HTTP ${response.status}: ${response.statusText}`;
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
         logger.error(`Failed to delete content template: ${errorMessage}`);
 
         return {
@@ -287,8 +279,7 @@ export class TwilioContentClient {
 
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to delete content template: ${errorMessage}`);
 
       return {
@@ -309,13 +300,13 @@ export class TwilioContentClient {
     if (!this.config.accountSid || !this.config.authToken) {
       return {
         success: false,
-        error: "Twilio credentials not configured.",
+        error: 'Twilio credentials not configured.',
       };
     }
 
     try {
       const response = await fetch(`${this.baseUrl}/Content/${contentSid}`, {
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: this.getAuthHeader(),
         },
@@ -325,9 +316,7 @@ export class TwilioContentClient {
         const errorData = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        const errorMessage =
-          errorData.message ||
-          `HTTP ${response.status}: ${response.statusText}`;
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
 
         return {
           success: false,
@@ -342,8 +331,7 @@ export class TwilioContentClient {
         template: data,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       return {
         success: false,
@@ -363,28 +351,23 @@ export class TwilioContentClient {
     if (!this.config.accountSid || !this.config.authToken) {
       return {
         success: false,
-        error: "Twilio credentials not configured.",
+        error: 'Twilio credentials not configured.',
       };
     }
 
     try {
-      const response = await fetch(
-        `${this.baseUrl}/Content?PageSize=${pageSize}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: this.getAuthHeader(),
-          },
+      const response = await fetch(`${this.baseUrl}/Content?PageSize=${pageSize}`, {
+        method: 'GET',
+        headers: {
+          Authorization: this.getAuthHeader(),
         },
-      );
+      });
 
       if (!response.ok) {
         const errorData = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        const errorMessage =
-          errorData.message ||
-          `HTTP ${response.status}: ${response.statusText}`;
+        const errorMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
 
         return {
           success: false,
@@ -401,8 +384,7 @@ export class TwilioContentClient {
         templates: data.contents || [],
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
       return {
         success: false,

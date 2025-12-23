@@ -38,7 +38,7 @@ export interface SignInInput {
 }
 
 export interface AuthResponse {
-  user: Omit<User, "password_hash">;
+  user: Omit<User, 'password_hash'>;
   token: string;
 }
 
@@ -52,7 +52,7 @@ export interface PaginatedResult<T> {
   pageState?: string;
 }
 
-export type TaskStatus = "open" | "assigned" | "closed";
+export type TaskStatus = 'open' | 'assigned' | 'closed';
 
 export interface Task {
   id: string;

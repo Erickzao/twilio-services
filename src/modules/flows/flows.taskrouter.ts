@@ -1,7 +1,7 @@
-import Twilio from "twilio";
-import { createLogger } from "@/shared/utils/logger";
+import Twilio from 'twilio';
+import { createLogger } from '@/shared/utils/logger';
 
-const logger = createLogger("TwilioTaskRouter");
+const logger = createLogger('TwilioTaskRouter');
 
 export type TaskRouterWorkflow = {
   sid: string;
@@ -40,9 +40,7 @@ export class TwilioTaskRouterClient {
     if (!accountSid || !authToken) {
       if (!this.twilioConfigWarned) {
         this.twilioConfigWarned = true;
-        logger.warn(
-          "Twilio credentials not configured (TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN).",
-        );
+        logger.warn('Twilio credentials not configured (TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN).');
       }
       return null;
     }
@@ -77,7 +75,7 @@ export class TwilioTaskRouterClient {
     }
 
     const flexCandidates = workspaces.filter((w) =>
-      (w.friendlyName || "").toLowerCase().includes("flex"),
+      (w.friendlyName || '').toLowerCase().includes('flex'),
     );
     if (flexCandidates.length === 1) {
       this.workspaceSid = flexCandidates[0]?.sid ?? null;
@@ -90,8 +88,8 @@ export class TwilioTaskRouterClient {
     if (!this.workspaceResolveWarned) {
       this.workspaceResolveWarned = true;
       const choices = workspaces
-        .map((w) => `${w.sid}${w.friendlyName ? ` (${w.friendlyName})` : ""}`)
-        .join(", ");
+        .map((w) => `${w.sid}${w.friendlyName ? ` (${w.friendlyName})` : ''}`)
+        .join(', ');
       logger.warn(
         `Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID. Available: ${choices}`,
       );
@@ -102,20 +100,17 @@ export class TwilioTaskRouterClient {
 
   async listWorkflows(limit = 100): Promise<ListResult<TaskRouterWorkflow>> {
     const client = this.getClient();
-    if (!client) return { success: false, error: "Twilio not configured" };
+    if (!client) return { success: false, error: 'Twilio not configured' };
 
     const workspaceSid = await this.resolveWorkspaceSid();
     if (!workspaceSid) {
       return {
         success: false,
-        error:
-          "Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.",
+        error: 'Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.',
       };
     }
 
-    const workflows = await client.taskrouter.v1
-      .workspaces(workspaceSid)
-      .workflows.list({ limit });
+    const workflows = await client.taskrouter.v1.workspaces(workspaceSid).workflows.list({ limit });
 
     return {
       success: true,
@@ -127,18 +122,15 @@ export class TwilioTaskRouterClient {
     };
   }
 
-  async listTaskChannels(
-    limit = 100,
-  ): Promise<ListResult<TaskRouterTaskChannel>> {
+  async listTaskChannels(limit = 100): Promise<ListResult<TaskRouterTaskChannel>> {
     const client = this.getClient();
-    if (!client) return { success: false, error: "Twilio not configured" };
+    if (!client) return { success: false, error: 'Twilio not configured' };
 
     const workspaceSid = await this.resolveWorkspaceSid();
     if (!workspaceSid) {
       return {
         success: false,
-        error:
-          "Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.",
+        error: 'Could not resolve TaskRouter workspace. Set TWILIO_TASKROUTER_WORKSPACE_SID.',
       };
     }
 
@@ -152,7 +144,7 @@ export class TwilioTaskRouterClient {
       data: channels.map((c) => ({
         sid: c.sid,
         friendlyName: c.friendlyName || c.sid,
-        uniqueName: c.uniqueName || "",
+        uniqueName: c.uniqueName || '',
       })),
     };
   }

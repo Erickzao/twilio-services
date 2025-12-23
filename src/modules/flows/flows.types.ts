@@ -2,8 +2,8 @@
 // Tipos do Modelo Simplificado (Input do Usuário)
 // ============================================
 
-export type FlowNodeType = "message" | "question" | "buttons" | "transfer";
-export type FlowStatus = "draft" | "published" | "error";
+export type FlowNodeType = 'message' | 'question' | 'buttons' | 'transfer';
+export type FlowStatus = 'draft' | 'published' | 'error';
 
 export interface Position {
   x: number;

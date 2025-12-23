@@ -1,8 +1,8 @@
-import Twilio from "twilio";
-import { createLogger } from "@/shared/utils/logger";
-import type { TwilioFlowDefinition } from "./flows.types";
+import Twilio from 'twilio';
+import { createLogger } from '@/shared/utils/logger';
+import type { TwilioFlowDefinition } from './flows.types';
 
-const logger = createLogger("TwilioStudio");
+const logger = createLogger('TwilioStudio');
 
 interface TwilioConfig {
   accountSid: string;
@@ -36,22 +36,20 @@ export class TwilioStudioClient {
 
   constructor() {
     this.config = {
-      accountSid: process.env.TWILIO_ACCOUNT_SID || "",
-      authToken: process.env.TWILIO_AUTH_TOKEN || "",
+      accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+      authToken: process.env.TWILIO_AUTH_TOKEN || '',
     };
   }
 
   private getClient(): Twilio.Twilio | null {
     if (!this.config.accountSid || !this.config.authToken) {
-      logger.warn(
-        "Twilio credentials not configured. Studio features will be disabled.",
-      );
+      logger.warn('Twilio credentials not configured. Studio features will be disabled.');
       return null;
     }
 
     if (!this.client) {
       this.client = Twilio(this.config.accountSid, this.config.authToken);
-      logger.log("Twilio Studio client initialized");
+      logger.log('Twilio Studio client initialized');
     }
 
     return this.client;
@@ -60,14 +58,14 @@ export class TwilioStudioClient {
   async createFlow(
     friendlyName: string,
     definition: TwilioFlowDefinition,
-    status: "draft" | "published" = "draft",
+    status: 'draft' | 'published' = 'draft',
   ): Promise<CreateFlowResult> {
     const client = this.getClient();
 
     if (!client) {
       return {
         success: false,
-        error: "Twilio client not initialized. Check credentials.",
+        error: 'Twilio client not initialized. Check credentials.',
       };
     }
 
@@ -86,8 +84,7 @@ export class TwilioStudioClient {
         flowSid: flow.sid,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to create flow: ${errorMessage}`);
 
       return {
@@ -100,7 +97,7 @@ export class TwilioStudioClient {
   async updateFlow(
     flowSid: string,
     definition: TwilioFlowDefinition,
-    status: "draft" | "published" = "published",
+    status: 'draft' | 'published' = 'published',
     commitMessage?: string,
   ): Promise<UpdateFlowResult> {
     const client = this.getClient();
@@ -108,7 +105,7 @@ export class TwilioStudioClient {
     if (!client) {
       return {
         success: false,
-        error: "Twilio client not initialized. Check credentials.",
+        error: 'Twilio client not initialized. Check credentials.',
       };
     }
 
@@ -116,16 +113,14 @@ export class TwilioStudioClient {
       await client.studio.v2.flows(flowSid).update({
         status,
         definition: definition as unknown as Record<string, unknown>,
-        commitMessage:
-          commitMessage || `Updated via API at ${new Date().toISOString()}`,
+        commitMessage: commitMessage || `Updated via API at ${new Date().toISOString()}`,
       });
 
       logger.log(`Flow ${flowSid} updated successfully`);
 
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to update flow ${flowSid}: ${errorMessage}`);
 
       return {
@@ -141,7 +136,7 @@ export class TwilioStudioClient {
     if (!client) {
       return {
         success: false,
-        error: "Twilio client not initialized. Check credentials.",
+        error: 'Twilio client not initialized. Check credentials.',
       };
     }
 
@@ -151,8 +146,7 @@ export class TwilioStudioClient {
 
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to delete flow ${flowSid}: ${errorMessage}`);
 
       return {
@@ -177,7 +171,7 @@ export class TwilioStudioClient {
     if (!client) {
       return {
         success: false,
-        error: "Twilio client not initialized. Check credentials.",
+        error: 'Twilio client not initialized. Check credentials.',
       };
     }
 
@@ -194,8 +188,7 @@ export class TwilioStudioClient {
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to fetch flow ${flowSid}: ${errorMessage}`);
 
       return {
@@ -214,14 +207,14 @@ export class TwilioStudioClient {
     if (!client) {
       return {
         valid: false,
-        errors: ["Twilio client not initialized. Check credentials."],
+        errors: ['Twilio client not initialized. Check credentials.'],
       };
     }
 
     try {
       const result = await client.studio.v2.flowValidate.update({
         friendlyName,
-        status: "draft",
+        status: 'draft',
         definition: definition as unknown as Record<string, unknown>,
       });
 
@@ -229,10 +222,10 @@ export class TwilioStudioClient {
         valid: result.valid,
       };
     } catch (error: unknown) {
-      let errorMessage = "Unknown error";
+      let errorMessage = 'Unknown error';
       const errors: string[] = [];
 
-      if (error && typeof error === "object") {
+      if (error && typeof error === 'object') {
         const twilioError = error as {
           message?: string;
           details?: Record<string, unknown>;
@@ -243,9 +236,7 @@ export class TwilioStudioClient {
 
         // Log detalhes do erro da Twilio
         if (twilioError.details) {
-          logger.error(
-            `Validation details: ${JSON.stringify(twilioError.details, null, 2)}`,
-          );
+          logger.error(`Validation details: ${JSON.stringify(twilioError.details, null, 2)}`);
           errors.push(JSON.stringify(twilioError.details));
         }
 
@@ -263,16 +254,13 @@ export class TwilioStudioClient {
     }
   }
 
-  async setFlowStatus(
-    flowSid: string,
-    status: "draft" | "published",
-  ): Promise<UpdateFlowResult> {
+  async setFlowStatus(flowSid: string, status: 'draft' | 'published'): Promise<UpdateFlowResult> {
     const client = this.getClient();
 
     if (!client) {
       return {
         success: false,
-        error: "Twilio client not initialized. Check credentials.",
+        error: 'Twilio client not initialized. Check credentials.',
       };
     }
 
@@ -290,8 +278,7 @@ export class TwilioStudioClient {
 
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to change flow ${flowSid} status: ${errorMessage}`);
 
       return {

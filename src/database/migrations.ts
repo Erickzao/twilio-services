@@ -1,5 +1,5 @@
-import { Client } from "cassandra-driver";
-import { env } from "@/config/env";
+import { Client } from 'cassandra-driver';
+import { env } from '@/config/env';
 
 export async function runMigrations(): Promise<void> {
   const adminClient = new Client({

@@ -1,5 +1,5 @@
-import type { types } from "cassandra-driver";
-import { getClient } from "@/database";
+import type { types } from 'cassandra-driver';
+import { getClient } from '@/database';
 
 export interface FlexTaskState {
   task_sid: string;
@@ -26,7 +26,7 @@ export class FlexTasksRepository {
   }
 
   async findByTaskSid(taskSid: string): Promise<FlexTaskState | null> {
-    const query = "SELECT * FROM flex_tasks WHERE task_sid = ?";
+    const query = 'SELECT * FROM flex_tasks WHERE task_sid = ?';
     const result = await this.client.execute(query, [taskSid], {
       prepare: true,
     });
@@ -34,20 +34,16 @@ export class FlexTasksRepository {
     return row ? this.mapRow(row) : null;
   }
 
-  async findByConversationSid(
-    conversationSid: string,
-  ): Promise<FlexTaskState | null> {
+  async findByConversationSid(conversationSid: string): Promise<FlexTaskState | null> {
     const lookupQuery =
-      "SELECT task_sid FROM flex_tasks_by_conversation WHERE conversation_sid = ?";
-    const lookupResult = await this.client.execute(
-      lookupQuery,
-      [conversationSid],
-      { prepare: true },
-    );
+      'SELECT task_sid FROM flex_tasks_by_conversation WHERE conversation_sid = ?';
+    const lookupResult = await this.client.execute(lookupQuery, [conversationSid], {
+      prepare: true,
+    });
     const lookupRow = lookupResult.rows[0];
     if (!lookupRow) return null;
 
-    const taskSid = lookupRow.get("task_sid") as string | null;
+    const taskSid = lookupRow.get('task_sid') as string | null;
     if (!taskSid) return null;
     return this.findByTaskSid(taskSid);
   }
@@ -108,7 +104,7 @@ export class FlexTasksRepository {
 
     if (input.conversationSid) {
       await this.client.execute(
-        "INSERT INTO flex_tasks_by_conversation (conversation_sid, task_sid) VALUES (?, ?)",
+        'INSERT INTO flex_tasks_by_conversation (conversation_sid, task_sid) VALUES (?, ?)',
         [input.conversationSid, input.taskSid],
         { prepare: true },
       );
@@ -158,30 +154,28 @@ export class FlexTasksRepository {
   }
 
   private mapRow(row: types.Row): FlexTaskState {
-    const greetingSentAt = row.get("greeting_sent_at") as Date | null;
-    const pingSentAt = row.get("ping_sent_at") as Date | null;
-    const inactiveSentAt = row.get("inactive_sent_at") as Date | null;
-    const lastCustomerActivityAt = row.get(
-      "last_customer_activity_at",
-    ) as Date | null;
+    const greetingSentAt = row.get('greeting_sent_at') as Date | null;
+    const pingSentAt = row.get('ping_sent_at') as Date | null;
+    const inactiveSentAt = row.get('inactive_sent_at') as Date | null;
+    const lastCustomerActivityAt = row.get('last_customer_activity_at') as Date | null;
 
     return {
-      task_sid: (row.get("task_sid") as string) ?? "",
-      conversation_sid: row.get("conversation_sid") ?? undefined,
-      channel_type: row.get("channel_type") ?? undefined,
-      customer_name: row.get("customer_name") ?? undefined,
-      customer_address: row.get("customer_address") ?? undefined,
-      customer_from: row.get("customer_from") ?? undefined,
-      worker_sid: row.get("worker_sid") ?? undefined,
-      worker_name: row.get("worker_name") ?? undefined,
-      task_assignment_status: row.get("task_assignment_status") ?? undefined,
-      task_attributes: row.get("task_attributes") ?? undefined,
+      task_sid: (row.get('task_sid') as string) ?? '',
+      conversation_sid: row.get('conversation_sid') ?? undefined,
+      channel_type: row.get('channel_type') ?? undefined,
+      customer_name: row.get('customer_name') ?? undefined,
+      customer_address: row.get('customer_address') ?? undefined,
+      customer_from: row.get('customer_from') ?? undefined,
+      worker_sid: row.get('worker_sid') ?? undefined,
+      worker_name: row.get('worker_name') ?? undefined,
+      task_assignment_status: row.get('task_assignment_status') ?? undefined,
+      task_attributes: row.get('task_attributes') ?? undefined,
       greeting_sent_at: greetingSentAt ?? undefined,
       ping_sent_at: pingSentAt ?? undefined,
       inactive_sent_at: inactiveSentAt ?? undefined,
       last_customer_activity_at: lastCustomerActivityAt ?? undefined,
-      created_at: row.get("created_at") ?? new Date(),
-      updated_at: row.get("updated_at") ?? new Date(),
+      created_at: row.get('created_at') ?? new Date(),
+      updated_at: row.get('updated_at') ?? new Date(),
     };
   }
 }

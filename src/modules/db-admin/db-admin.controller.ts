@@ -1,15 +1,15 @@
-import { Elysia, t } from "elysia";
-import { env } from "@/config/env";
-import { getClient } from "@/database";
-import { authService } from "@/modules/auth";
+import { Elysia, t } from 'elysia';
+import { env } from '@/config/env';
+import { getClient } from '@/database';
+import { authService } from '@/modules/auth';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
 function isDbAdminEnabled(): boolean {
-  const explicit = (process.env.DB_ADMIN_ENABLED || "").toLowerCase();
-  if (explicit === "true") return true;
-  if (explicit === "false") return false;
+  const explicit = (process.env.DB_ADMIN_ENABLED || '').toLowerCase();
+  if (explicit === 'true') return true;
+  if (explicit === 'false') return false;
   return env.isDev;
 }
 
@@ -19,7 +19,7 @@ function getDbAdminToken(): string | null {
 }
 
 function isWriteAllowed(): boolean {
-  return (process.env.DB_ADMIN_ALLOW_WRITE || "").toLowerCase() === "true";
+  return (process.env.DB_ADMIN_ALLOW_WRITE || '').toLowerCase() === 'true';
 }
 
 function isValidIdentifier(value: string): boolean {
@@ -54,9 +54,9 @@ function qualifyQueryWithKeyspace(query: string, keyspace: string): string {
   for (const pattern of patterns) {
     const match = query.match(pattern.re);
     if (!match) continue;
-    const tableRef = match[1] || "";
+    const tableRef = match[1] || '';
     if (!tableRef) continue;
-    if (tableRef.includes(".")) return query;
+    if (tableRef.includes('.')) return query;
     return query.replace(pattern.re, () => pattern.replace(tableRef));
   }
 
@@ -66,9 +66,8 @@ function qualifyQueryWithKeyspace(query: string, keyspace: string): string {
 function toJsonValue(value: unknown): unknown {
   if (value === null || value === undefined) return null;
   if (value instanceof Date) return value.toISOString();
-  if (typeof value === "bigint") return value.toString();
-  if (typeof value === "number" && !Number.isFinite(value))
-    return String(value);
+  if (typeof value === 'bigint') return value.toString();
+  if (typeof value === 'number' && !Number.isFinite(value)) return String(value);
 
   if (Array.isArray(value)) return value.map(toJsonValue);
 
@@ -80,17 +79,17 @@ function toJsonValue(value: unknown): unknown {
     return obj;
   }
 
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     const objValue = value as { toString?: () => string };
-    if (typeof objValue.toString === "function") {
+    if (typeof objValue.toString === 'function') {
       const tag = Object.prototype.toString.call(value);
       // Common Cassandra driver types (Uuid/TimeUuid/Long/Inet/etc) stringify nicely.
-      if (tag !== "[object Object]") return objValue.toString();
+      if (tag !== '[object Object]') return objValue.toString();
     }
 
     const obj: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (typeof v === "function") continue;
+      if (typeof v === 'function') continue;
       obj[k] = toJsonValue(v);
     }
     return obj;
@@ -100,7 +99,7 @@ function toJsonValue(value: unknown): unknown {
 }
 
 function rowToJson(row: unknown): Record<string, unknown> {
-  if (!row || typeof row !== "object") return {};
+  if (!row || typeof row !== 'object') return {};
 
   const anyRow = row as {
     keys?: () => string[];
@@ -108,7 +107,7 @@ function rowToJson(row: unknown): Record<string, unknown> {
     [key: string]: unknown;
   };
 
-  if (typeof anyRow.keys === "function" && typeof anyRow.get === "function") {
+  if (typeof anyRow.keys === 'function' && typeof anyRow.get === 'function') {
     const obj: Record<string, unknown> = {};
     for (const key of anyRow.keys()) {
       obj[key] = toJsonValue(anyRow.get(key));
@@ -118,7 +117,7 @@ function rowToJson(row: unknown): Record<string, unknown> {
 
   const obj: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(anyRow)) {
-    if (typeof v === "function") continue;
+    if (typeof v === 'function') continue;
     obj[k] = toJsonValue(v);
   }
   return obj;
@@ -137,8 +136,7 @@ async function requireDbAdminAccess(ctx: {
   const token = getDbAdminToken();
   if (token) {
     const provided =
-      ctx.headers["x-admin-token"]?.trim() ||
-      ctx.headers["x-db-admin-token"]?.trim();
+      ctx.headers['x-admin-token']?.trim() || ctx.headers['x-db-admin-token']?.trim();
     if (provided === token) return true;
     ctx.set.status = 401;
     return false;
@@ -149,7 +147,7 @@ async function requireDbAdminAccess(ctx: {
 
   const sessionCookieName = env.session.cookieName;
   const sessionToken = ctx.cookie[sessionCookieName]?.value;
-  if (!sessionToken || typeof sessionToken !== "string") {
+  if (!sessionToken || typeof sessionToken !== 'string') {
     ctx.set.status = 401;
     return false;
   }
@@ -164,7 +162,6 @@ async function requireDbAdminAccess(ctx: {
 }
 
 function buildAdminHtml(): string {
-  const enabled = isDbAdminEnabled();
   const allowWrite = isWriteAllowed();
   const keyspace = env.scylla.keyspace;
 
@@ -772,7 +769,7 @@ function buildAdminHtml(): string {
         DB Admin
       </div>
       <div class="badge">${keyspace}</div>
-      <div class="badge">write: ${allowWrite ? "on" : "off"}</div>
+      <div class="badge">write: ${allowWrite ? 'on' : 'off'}</div>
       <div class="spacer"></div>
       <input id="token" type="password" placeholder="Admin Token" />
     </header>
@@ -1142,70 +1139,68 @@ function buildAdminHtml(): string {
 </html>`;
 }
 
-export const dbAdminController = new Elysia({ prefix: "/db-admin" })
+export const dbAdminController = new Elysia({ prefix: '/db-admin' })
   .get(
-    "/",
+    '/',
     async ({ headers, cookie, set }) => {
       const ok = await requireDbAdminAccess({ headers, cookie, set });
-      if (!ok) return { message: "Not authorized" };
-      set.headers["content-type"] = "text/html; charset=utf-8";
+      if (!ok) return { message: 'Not authorized' };
+      set.headers['content-type'] = 'text/html; charset=utf-8';
       return buildAdminHtml();
     },
     {
       detail: {
-        summary: "DB Admin UI",
-        tags: ["DB Admin"],
+        summary: 'DB Admin UI',
+        tags: ['DB Admin'],
       },
     },
   )
   .get(
-    "/api/keyspaces",
+    '/api/keyspaces',
     async ({ headers, cookie, set }) => {
       const ok = await requireDbAdminAccess({ headers, cookie, set });
-      if (!ok) return { message: "Not authorized" };
+      if (!ok) return { message: 'Not authorized' };
 
-      const result = await getClient().execute(
-        "SELECT keyspace_name FROM system_schema.keyspaces",
-      );
+      const result = await getClient().execute('SELECT keyspace_name FROM system_schema.keyspaces');
       const keyspaces = result.rows
         .map((r) => rowToJson(r).keyspace_name)
-        .filter((v): v is string => typeof v === "string" && v.length > 0)
+        .filter((v): v is string => typeof v === 'string' && v.length > 0)
         .sort((a, b) => a.localeCompare(b));
 
       return { data: keyspaces, defaultKeyspace: env.scylla.keyspace };
     },
     {
       detail: {
-        summary: "List keyspaces",
-        tags: ["DB Admin"],
+        summary: 'List keyspaces',
+        tags: ['DB Admin'],
       },
     },
   )
   .get(
-    "/api/tables",
+    '/api/tables',
     async ({ query, headers, cookie, set }) => {
       const ok = await requireDbAdminAccess({ headers, cookie, set });
-      if (!ok) return { message: "Not authorized" };
+      if (!ok) return { message: 'Not authorized' };
 
       const keyspaceRaw =
-        typeof query.keyspace === "string" && query.keyspace.trim().length > 0
+        typeof query.keyspace === 'string' && query.keyspace.trim().length > 0
           ? query.keyspace.trim()
           : env.scylla.keyspace;
 
       if (!isValidIdentifier(keyspaceRaw)) {
         set.status = 400;
-        return { message: "Invalid keyspace" };
+        return { message: 'Invalid keyspace' };
       }
 
       const result = await getClient().execute(
-        "SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?",
+        'SELECT table_name FROM system_schema.tables WHERE keyspace_name = ?',
         [keyspaceRaw],
         { prepare: true },
       );
 
       const tables = result.rows
         .map((r) => rowToJson(r).table_name)
-        .filter((v): v is string => typeof v === "string" && v.length > 0)
+        .filter((v): v is string => typeof v === 'string' && v.length > 0)
         .sort((a, b) => a.localeCompare(b));
 
       return { data: tables, keyspace: keyspaceRaw };
@@ -1215,39 +1210,37 @@ export const dbAdminController = new Elysia({ prefix: "/db-admin" })
         keyspace: t.Optional(t.String()),
       }),
       detail: {
-        summary: "List tables",
-        tags: ["DB Admin"],
+        summary: 'List tables',
+        tags: ['DB Admin'],
       },
     },
   )
   .get(
-    "/api/table/:table/rows",
+    '/api/table/:table/rows',
     async ({ params, query, headers, cookie, set }) => {
       const ok = await requireDbAdminAccess({ headers, cookie, set });
-      if (!ok) return { message: "Not authorized" };
+      if (!ok) return { message: 'Not authorized' };
 
       const keyspaceRaw =
-        typeof query.keyspace === "string" && query.keyspace.trim().length > 0
+        typeof query.keyspace === 'string' && query.keyspace.trim().length > 0
           ? query.keyspace.trim()
           : env.scylla.keyspace;
       const tableRaw = params.table;
 
       if (!isValidIdentifier(keyspaceRaw)) {
         set.status = 400;
-        return { message: "Invalid keyspace" };
+        return { message: 'Invalid keyspace' };
       }
       if (!isValidIdentifier(tableRaw)) {
         set.status = 400;
-        return { message: "Invalid table" };
+        return { message: 'Invalid table' };
       }
 
       const limitNumber = Math.min(
         MAX_LIMIT,
         Math.max(
           1,
-          Number.isFinite(Number(query.limit))
-            ? Math.floor(Number(query.limit))
-            : DEFAULT_LIMIT,
+          Number.isFinite(Number(query.limit)) ? Math.floor(Number(query.limit)) : DEFAULT_LIMIT,
         ),
       );
 
@@ -1269,46 +1262,45 @@ export const dbAdminController = new Elysia({ prefix: "/db-admin" })
         limit: t.Optional(t.Numeric({ default: DEFAULT_LIMIT })),
       }),
       detail: {
-        summary: "List rows (limited)",
-        tags: ["DB Admin"],
+        summary: 'List rows (limited)',
+        tags: ['DB Admin'],
       },
     },
   )
   .post(
-    "/api/query",
+    '/api/query',
     async ({ body, headers, cookie, set }) => {
       const ok = await requireDbAdminAccess({ headers, cookie, set });
-      if (!ok) return { message: "Not authorized" };
+      if (!ok) return { message: 'Not authorized' };
 
       const keyspaceRaw =
-        typeof body.keyspace === "string" && body.keyspace.trim().length > 0
+        typeof body.keyspace === 'string' && body.keyspace.trim().length > 0
           ? body.keyspace.trim()
           : env.scylla.keyspace;
 
       if (!isValidIdentifier(keyspaceRaw)) {
         set.status = 400;
-        return { message: "Invalid keyspace" };
+        return { message: 'Invalid keyspace' };
       }
 
       const raw = body.query;
       const trimmed = raw.trim();
       if (!trimmed) {
         set.status = 400;
-        return { message: "Query is required" };
+        return { message: 'Query is required' };
       }
 
-      const cleaned = trimmed.replace(/;\s*$/, "");
-      if (cleaned.includes(";")) {
+      const cleaned = trimmed.replace(/;\s*$/, '');
+      if (cleaned.includes(';')) {
         set.status = 400;
-        return { message: "Only one statement is allowed" };
+        return { message: 'Only one statement is allowed' };
       }
 
       const startsWithSelect = /^\s*select\b/i.test(cleaned);
       if (!startsWithSelect && !isWriteAllowed()) {
         set.status = 400;
         return {
-          message:
-            "Only SELECT queries are allowed (DB_ADMIN_ALLOW_WRITE=false)",
+          message: 'Only SELECT queries are allowed (DB_ADMIN_ALLOW_WRITE=false)',
         };
       }
 
@@ -1316,10 +1308,7 @@ export const dbAdminController = new Elysia({ prefix: "/db-admin" })
 
       if (startsWithSelect && !/\blimit\s+\d+\b/i.test(finalQuery)) {
         const limit = MAX_LIMIT;
-        finalQuery = finalQuery.replace(
-          /\s+ALLOW\s+FILTERING\s*$/i,
-          (m) => ` LIMIT ${limit}${m}`,
-        );
+        finalQuery = finalQuery.replace(/\s+ALLOW\s+FILTERING\s*$/i, (m) => ` LIMIT ${limit}${m}`);
         if (!/\blimit\s+\d+\b/i.test(finalQuery)) {
           finalQuery = `${finalQuery} LIMIT ${limit}`;
         }
@@ -1337,7 +1326,7 @@ export const dbAdminController = new Elysia({ prefix: "/db-admin" })
         };
       } catch (err) {
         set.status = 400;
-        const message = err instanceof Error ? err.message : "Query failed";
+        const message = err instanceof Error ? err.message : 'Query failed';
         return { message, query: finalQuery, keyspace: keyspaceRaw };
       }
     },
@@ -1347,8 +1336,8 @@ export const dbAdminController = new Elysia({ prefix: "/db-admin" })
         keyspace: t.Optional(t.String()),
       }),
       detail: {
-        summary: "Run a query (SELECT by default)",
-        tags: ["DB Admin"],
+        summary: 'Run a query (SELECT by default)',
+        tags: ['DB Admin'],
       },
     },
   );

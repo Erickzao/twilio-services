@@ -6,7 +6,7 @@ import type {
   TwilioTransition,
   TwilioWidget,
   TwilioWidgetProperties,
-} from "./flows.types";
+} from './flows.types';
 
 // Constantes de layout - posicionamento organizado dos widgets no Twilio Studio
 const LAYOUT = {
@@ -37,11 +37,11 @@ export class FlowBuilder {
   private nodeMap: Map<string, FlowNode> = new Map();
   private processedNodes: Set<string> = new Set();
   private nodePositions: Map<string, { x: number; y: number }> = new Map();
-  private startNodeId: string = "";
+  private startNodeId: string = '';
   private transferIncomingSources: Map<string, string[]> = new Map();
   private transferPrimarySource: Map<string, string> = new Map();
   private transferCloneByEdge: Map<string, string> = new Map();
-  private botInitWidgetName = "bot_init";
+  private botInitWidgetName = 'bot_init';
 
   build(flow: Flow): TwilioFlowDefinition {
     this.widgets = [];
@@ -52,14 +52,14 @@ export class FlowBuilder {
     this.transferIncomingSources = new Map();
     this.transferPrimarySource = new Map();
     this.transferCloneByEdge = new Map();
-    this.botInitWidgetName = this.getWidgetName("bot_init");
+    this.botInitWidgetName = this.getWidgetName('bot_init');
 
     // Mapear nodes por ID
     for (const node of flow.nodes) {
       this.nodeMap.set(node.id, node);
     }
 
-    this.botInitWidgetName = this.getUniqueInternalWidgetName("bot_init");
+    this.botInitWidgetName = this.getUniqueInternalWidgetName('bot_init');
 
     // Calcular posições organizadas
     this.calculatePositions(flow);
@@ -79,7 +79,7 @@ export class FlowBuilder {
       flags: {
         allow_concurrent_calls: true,
       },
-      initial_state: "Trigger",
+      initial_state: 'Trigger',
       states: this.widgets,
     };
   }
@@ -87,12 +87,9 @@ export class FlowBuilder {
   private calculatePositions(flow: Flow): void {
     // Primeiro passo: calcular o nível MÁXIMO de cada nó (profundidade mais profunda)
     const allFinite = flow.nodes.every(
-      (node) =>
-        Number.isFinite(node.position.x) && Number.isFinite(node.position.y),
+      (node) => Number.isFinite(node.position.x) && Number.isFinite(node.position.y),
     );
-    const hasAnyNonZero = flow.nodes.some(
-      (node) => node.position.x !== 0 || node.position.y !== 0,
-    );
+    const hasAnyNonZero = flow.nodes.some((node) => node.position.x !== 0 || node.position.y !== 0);
 
     // If the input already provides canvas positions, keep them 1:1 in Twilio Studio.
     if (allFinite && hasAnyNonZero) {
@@ -154,7 +151,7 @@ export class FlowBuilder {
         }
         if (width < 1) width = 1;
       } else {
-        width = getWidth(children[0] || "");
+        width = getWidth(children[0] || '');
         if (!Number.isFinite(width) || width < 1) width = 1;
       }
 
@@ -176,10 +173,7 @@ export class FlowBuilder {
       const centerSlot = leftSlot + (width - 1) / 2;
 
       this.nodePositions.set(nodeId, {
-        x: Math.round(
-          LAYOUT.START_X +
-            (centerSlot - rootCenterSlot) * LAYOUT.HORIZONTAL_SPACING,
-        ),
+        x: Math.round(LAYOUT.START_X + (centerSlot - rootCenterSlot) * LAYOUT.HORIZONTAL_SPACING),
         y: Math.round(LAYOUT.START_Y + level * LAYOUT.VERTICAL_SPACING),
       });
 
@@ -205,67 +199,6 @@ export class FlowBuilder {
     };
 
     place(flow.start_node_id, 0, 0);
-    return;
-
-    const nodeMaxLevel: Map<string, number> = new Map();
-    const nodeBranchIndex: Map<string, number> = new Map();
-
-    const calculateMaxLevel = (
-      nodeId: string,
-      currentLevel: number,
-      branchIdx: number,
-    ): void => {
-      const existingLevel = nodeMaxLevel.get(nodeId) || -1;
-
-      // Atualizar para o nível mais profundo
-      if (currentLevel > existingLevel) {
-        nodeMaxLevel.set(nodeId, currentLevel);
-        nodeBranchIndex.set(nodeId, branchIdx);
-      }
-
-      const node = this.nodeMap.get(nodeId);
-      if (!node) return;
-
-      if (node.buttons) {
-        node.buttons.forEach((btn, idx) => {
-          calculateMaxLevel(btn.nextNodeId, currentLevel + 1, idx);
-        });
-      } else if (node.nextNodeId) {
-        calculateMaxLevel(node.nextNodeId, currentLevel + 1, branchIdx);
-      }
-    };
-
-    calculateMaxLevel(flow.start_node_id, 0, 0);
-
-    // Segundo passo: agrupar por nível
-    const levelNodes: Map<number, { nodeId: string; branchIndex: number }[]> =
-      new Map();
-
-    nodeMaxLevel.forEach((level, nodeId) => {
-      if (!levelNodes.has(level)) {
-        levelNodes.set(level, []);
-      }
-      levelNodes
-        .get(level)!
-        .push({ nodeId, branchIndex: nodeBranchIndex.get(nodeId) || 0 });
-    });
-
-    // Terceiro passo: calcular posições centradas por nível
-    levelNodes.forEach((nodes, level) => {
-      // Ordenar por branchIndex para manter ordem consistente
-      nodes.sort((a, b) => a.branchIndex - b.branchIndex);
-
-      const count = nodes.length;
-      const totalWidth = (count - 1) * LAYOUT.HORIZONTAL_SPACING;
-      const startX = LAYOUT.START_X - totalWidth / 2;
-
-      nodes.forEach((item, idx) => {
-        this.nodePositions.set(item.nodeId, {
-          x: startX + idx * LAYOUT.HORIZONTAL_SPACING,
-          y: LAYOUT.START_Y + level * LAYOUT.VERTICAL_SPACING,
-        });
-      });
-    });
   }
 
   private processNodeRecursive(nodeId: string): void {
@@ -290,17 +223,17 @@ export class FlowBuilder {
     const firstWidgetName = this.botInitWidgetName;
 
     this.widgets.push({
-      name: "Trigger",
-      type: "trigger",
+      name: 'Trigger',
+      type: 'trigger',
       properties: {
         offset: { x: LAYOUT.TRIGGER_X, y: LAYOUT.TRIGGER_Y },
       },
       transitions: [
-        { event: "incomingMessage" },
-        { event: "incomingCall" },
-        { event: "incomingConversationMessage", next: firstWidgetName },
-        { event: "incomingRequest" },
-        { event: "incomingParent" },
+        { event: 'incomingMessage' },
+        { event: 'incomingCall' },
+        { event: 'incomingConversationMessage', next: firstWidgetName },
+        { event: 'incomingRequest' },
+        { event: 'incomingParent' },
       ],
     });
   }
@@ -311,7 +244,7 @@ export class FlowBuilder {
 
     this.widgets.push({
       name: this.botInitWidgetName,
-      type: "set-variables",
+      type: 'set-variables',
       properties: {
         offset: {
           x: startPosition.x - 270,
@@ -319,13 +252,13 @@ export class FlowBuilder {
         },
         variables: [
           {
-            type: "json_object",
+            type: 'json_object',
             value: flow.name,
-            key: "address",
+            key: 'address',
           },
         ],
       },
-      transitions: [{ event: "next", next: nextWidgetName }],
+      transitions: [{ event: 'next', next: nextWidgetName }],
     });
   }
 
@@ -373,25 +306,23 @@ export class FlowBuilder {
 
   private processNode(node: FlowNode): void {
     switch (node.type) {
-      case "message":
+      case 'message':
         this.createMessageWidget(node);
         break;
-      case "question":
+      case 'question':
         this.createQuestionWidget(node);
         break;
-      case "buttons":
+      case 'buttons':
         this.createButtonsWidget(node);
         break;
-      case "transfer":
+      case 'transfer':
         this.createTransferWidget(node);
         break;
     }
   }
 
   private getNodePosition(nodeId: string): { x: number; y: number } {
-    return (
-      this.nodePositions.get(nodeId) || { x: LAYOUT.START_X, y: LAYOUT.START_Y }
-    );
+    return this.nodePositions.get(nodeId) || { x: LAYOUT.START_X, y: LAYOUT.START_Y };
   }
 
   private prepareTransferClones(flow: Flow): void {
@@ -408,7 +339,7 @@ export class FlowBuilder {
         for (const btn of node.buttons) {
           if (!reachable.has(btn.nextNodeId)) continue;
           const target = this.nodeMap.get(btn.nextNodeId);
-          if (target?.type === "transfer") {
+          if (target?.type === 'transfer') {
             this.addTransferIncomingSource(btn.nextNodeId, node.id);
           }
         }
@@ -417,7 +348,7 @@ export class FlowBuilder {
       if (node.nextNodeId) {
         if (!reachable.has(node.nextNodeId)) continue;
         const target = this.nodeMap.get(node.nextNodeId);
-        if (target?.type === "transfer") {
+        if (target?.type === 'transfer') {
           this.addTransferIncomingSource(node.nextNodeId, node.id);
         }
       }
@@ -427,12 +358,12 @@ export class FlowBuilder {
       if (sources.length <= 1) continue;
 
       const transferPos = this.getNodePosition(transferNodeId);
-      let primarySourceId = sources[0] || "";
+      let primarySourceId = sources[0] || '';
 
       // Prefer the edge that comes directly from a "buttons" node (split option),
       // so the main transfer widget represents the direct button path.
       const buttonsSource = sources.find(
-        (sourceId) => this.nodeMap.get(sourceId)?.type === "buttons",
+        (sourceId) => this.nodeMap.get(sourceId)?.type === 'buttons',
       );
       if (buttonsSource) {
         primarySourceId = buttonsSource;
@@ -455,18 +386,12 @@ export class FlowBuilder {
       for (const sourceId of sources) {
         if (sourceId === primarySourceId) continue;
         const cloneName = `${this.getWidgetName(transferNodeId)}__from_${this.getWidgetName(sourceId)}`;
-        this.transferCloneByEdge.set(
-          `${sourceId}=>${transferNodeId}`,
-          cloneName,
-        );
+        this.transferCloneByEdge.set(`${sourceId}=>${transferNodeId}`, cloneName);
       }
     }
   }
 
-  private addTransferIncomingSource(
-    transferNodeId: string,
-    sourceNodeId: string,
-  ): void {
+  private addTransferIncomingSource(transferNodeId: string, sourceNodeId: string): void {
     const existing = this.transferIncomingSources.get(transferNodeId) || [];
     if (!existing.includes(sourceNodeId)) {
       existing.push(sourceNodeId);
@@ -505,10 +430,7 @@ export class FlowBuilder {
     return visited;
   }
 
-  private getButtonsSplitY(
-    node: FlowNode,
-    nodePosition: { x: number; y: number },
-  ): number {
+  private getButtonsSplitY(node: FlowNode, nodePosition: { x: number; y: number }): number {
     const desired = nodePosition.y + LAYOUT.SPLIT_Y_OFFSET;
 
     const childYs: number[] = [];
@@ -543,29 +465,29 @@ export class FlowBuilder {
 
     const properties: TwilioWidgetProperties = {
       offset: position,
-      from: "{{flow.variables.address}}",
-      to: "{{contact.channel.address}}",
-      service: "{{trigger.message.InstanceSid}}",
-      channel: "{{trigger.message.ChannelSid}}",
+      from: '{{flow.variables.address}}',
+      to: '{{contact.channel.address}}',
+      service: '{{trigger.message.InstanceSid}}',
+      channel: '{{trigger.message.ChannelSid}}',
       attributes: '{\n"is_bot": "Mensagem do bot"\n}',
     };
 
     // Se tem Content Template, usar content_template_sid
     if (node.contentTemplateSid) {
-      properties.message_type = "content_template";
+      properties.message_type = 'content_template';
       properties.content_sid = node.contentTemplateSid;
       properties.content_template_sid = node.contentTemplateSid;
       properties.body = node.content;
     } else {
-      properties.message_type = "custom";
+      properties.message_type = 'custom';
       properties.body = node.content;
     }
 
     this.widgets.push({
       name: widgetName,
-      type: "send-message",
+      type: 'send-message',
       properties,
-      transitions: [{ event: "sent", next: nextWidget }, { event: "failed" }],
+      transitions: [{ event: 'sent', next: nextWidget }, { event: 'failed' }],
     });
   }
 
@@ -578,33 +500,30 @@ export class FlowBuilder {
 
     const properties: TwilioWidgetProperties = {
       offset: position,
-      from: "{{flow.variables.address}}",
-      to: "{{contact.channel.address}}",
-      service: "{{trigger.message.InstanceSid}}",
-      channel: "{{trigger.message.ChannelSid}}",
+      from: '{{flow.variables.address}}',
+      to: '{{contact.channel.address}}',
+      service: '{{trigger.message.InstanceSid}}',
+      channel: '{{trigger.message.ChannelSid}}',
       timeout: String(node.timeout || DEFAULT_TIMEOUT),
       attributes: '{\n"is_bot": "Mensagem do bot"\n}',
     };
 
     // Se tem Content Template, usar content_template_sid
     if (node.contentTemplateSid) {
-      properties.message_type = "content_template";
+      properties.message_type = 'content_template';
       properties.content_sid = node.contentTemplateSid;
       properties.content_template_sid = node.contentTemplateSid;
       properties.body = node.content;
     } else {
-      properties.message_type = "custom";
+      properties.message_type = 'custom';
       properties.body = node.content;
     }
 
     this.widgets.push({
       name: widgetName,
-      type: "send-and-wait-for-reply",
+      type: 'send-and-wait-for-reply',
       properties,
-      transitions: [
-        { event: "incomingMessage", next: nextWidget },
-        { event: "deliveryFailure" },
-      ],
+      transitions: [{ event: 'incomingMessage', next: nextWidget }, { event: 'deliveryFailure' }],
     });
   }
 
@@ -624,23 +543,23 @@ export class FlowBuilder {
 
     const properties: TwilioWidgetProperties = {
       offset: position,
-      from: "{{flow.variables.address}}",
-      to: "{{contact.channel.address}}",
-      service: "{{trigger.message.InstanceSid}}",
-      channel: "{{trigger.message.ChannelSid}}",
+      from: '{{flow.variables.address}}',
+      to: '{{contact.channel.address}}',
+      service: '{{trigger.message.InstanceSid}}',
+      channel: '{{trigger.message.ChannelSid}}',
       timeout: String(node.timeout || DEFAULT_TIMEOUT),
       attributes: '{\n"is_bot": "Mensagem do bot"\n}',
     };
 
     if (usesContentTemplate) {
       // Usar Content Template para botões interativos
-      properties.message_type = "content_template";
+      properties.message_type = 'content_template';
       properties.content_sid = node.contentTemplateSid;
       properties.content_template_sid = node.contentTemplateSid;
       properties.body = node.content;
     } else {
       // Fallback: mensagem com opções numeradas
-      properties.message_type = "custom";
+      properties.message_type = 'custom';
       const buttonText = this.formatButtonsAsText(node.buttons);
       properties.body = `${node.content}\n\n${buttonText}`;
     }
@@ -648,14 +567,14 @@ export class FlowBuilder {
     // Widget de mensagem com espera de resposta
     this.widgets.push({
       name: messageWidgetName,
-      type: "send-and-wait-for-reply",
+      type: 'send-and-wait-for-reply',
       properties,
       transitions: [
         {
-          event: "incomingMessage",
+          event: 'incomingMessage',
           next: usesContentTemplate ? setResponseWidgetName : splitWidgetName,
         },
-        { event: "deliveryFailure" },
+        { event: 'deliveryFailure' },
       ],
     });
 
@@ -672,7 +591,7 @@ export class FlowBuilder {
       const setResponseY = Math.round((position.y + splitY) / 2);
       this.widgets.push({
         name: setResponseWidgetName,
-        type: "set-variables",
+        type: 'set-variables',
         properties: {
           offset: {
             x: position.x,
@@ -680,19 +599,19 @@ export class FlowBuilder {
           },
           variables: [
             {
-              type: "json_object",
+              type: 'json_object',
               value: `{{widgets.${messageWidgetName}.inbound.Attributes}}`,
-              key: "response_id",
+              key: 'response_id',
             },
           ],
         },
-        transitions: [{ event: "next", next: splitWidgetName }],
+        transitions: [{ event: 'next', next: splitWidgetName }],
       });
     }
 
     this.widgets.push({
       name: splitWidgetName,
-      type: "split-based-on",
+      type: 'split-based-on',
       properties: {
         offset: {
           x: position.x + LAYOUT.SPLIT_X_OFFSET,
@@ -700,7 +619,7 @@ export class FlowBuilder {
         },
         // Se usa Content Template, ler ButtonPayload; senão, ler Body
         input: usesContentTemplate
-          ? "{{flow.variables.response_id.content_response}}"
+          ? '{{flow.variables.response_id.content_response}}'
           : `{{widgets.${messageWidgetName}.inbound.Body}}`,
       },
       transitions: splitTransitions,
@@ -713,31 +632,31 @@ export class FlowBuilder {
     const config = node.transferConfig || {};
 
     const attributes: Record<string, string> = {
-      type: "inbound",
-      name: "{{trigger.message.ChannelAttributes.from}}",
+      type: 'inbound',
+      name: '{{trigger.message.ChannelAttributes.from}}',
       ...config.attributes,
     };
 
     const transitions: TwilioTransition[] = [
-      { event: "callComplete" },
-      { event: "failedToEnqueue" },
-      { event: "callFailure" },
+      { event: 'callComplete' },
+      { event: 'failedToEnqueue' },
+      { event: 'callFailure' },
     ];
 
     const baseProperties: TwilioWidgetProperties = {
       offset: position,
-      workflow: config.workflowSid || "WW00000000000000000000000000000000",
-      channel: config.channelSid || "TC00000000000000000000000000000000",
+      workflow: config.workflowSid || 'WW00000000000000000000000000000000',
+      channel: config.channelSid || 'TC00000000000000000000000000000000',
       attributes: JSON.stringify(attributes),
       priority: String(config.priority || 0),
       timeout: String(config.timeout || 86400),
-      waitUrl: "",
-      waitUrlMethod: "POST",
+      waitUrl: '',
+      waitUrlMethod: 'POST',
     };
 
     this.widgets.push({
       name: widgetName,
-      type: "send-to-flex",
+      type: 'send-to-flex',
       properties: baseProperties,
       transitions,
     });
@@ -757,7 +676,7 @@ export class FlowBuilder {
 
       this.widgets.push({
         name: cloneName,
-        type: "send-to-flex",
+        type: 'send-to-flex',
         properties: {
           ...baseProperties,
           offset: {
@@ -771,7 +690,7 @@ export class FlowBuilder {
   }
 
   private formatButtonsAsText(buttons: FlowButton[]): string {
-    return buttons.map((btn, index) => `${index + 1}. ${btn.label}`).join("\n");
+    return buttons.map((btn, index) => `${index + 1}. ${btn.label}`).join('\n');
   }
 
   private createButtonSplitTransitions(
@@ -785,41 +704,34 @@ export class FlowBuilder {
       const button = buttons[i];
       if (!button) continue;
 
-      const nextWidget = this.resolveNextWidgetName(
-        fromNodeId,
-        button.nextNodeId,
-      );
+      const nextWidget = this.resolveNextWidgetName(fromNodeId, button.nextNodeId);
 
       if (usesContentTemplate) {
         // Para Content Templates, usar equal_to com o id do botão (ButtonPayload retorna o id)
         transitions.push({
-          event: "match",
+          event: 'match',
           conditions: [
             {
-              type: "equal_to",
+              type: 'equal_to',
               friendly_name: `If value equal_to ${button.id}`,
               value: button.id,
-              arguments: ["{{flow.variables.response_id.content_response}}"],
+              arguments: ['{{flow.variables.response_id.content_response}}'],
             },
           ],
           next: nextWidget,
         });
       } else {
         // Para texto, aceitar número, valor ou label com matches_any_of
-        const matchValues = [
-          String(i + 1),
-          button.value.toLowerCase(),
-          button.label.toLowerCase(),
-        ];
+        const matchValues = [String(i + 1), button.value.toLowerCase(), button.label.toLowerCase()];
         const uniqueValues = [...new Set(matchValues.filter(Boolean))];
 
         transitions.push({
-          event: "match",
+          event: 'match',
           conditions: [
             {
-              type: "matches_any_of",
+              type: 'matches_any_of',
               friendly_name: button.label,
-              value: uniqueValues.join(","),
+              value: uniqueValues.join(','),
               arguments: uniqueValues,
             },
           ],
@@ -829,14 +741,14 @@ export class FlowBuilder {
     }
 
     // Opção inválida volta para perguntar novamente
-    transitions.push({ event: "noMatch" });
+    transitions.push({ event: 'noMatch' });
 
     return transitions;
   }
 
   private getUniqueInternalWidgetName(baseName: string): string {
     const normalizedBase = this.getWidgetName(baseName);
-    const used = new Set<string>(["Trigger"]);
+    const used = new Set<string>(['Trigger']);
 
     for (const nodeId of this.nodeMap.keys()) {
       used.add(this.getWidgetName(nodeId));
@@ -854,7 +766,7 @@ export class FlowBuilder {
   }
 
   private getWidgetName(nodeId: string): string {
-    return nodeId.replace(/[^a-zA-Z0-9_]/g, "_");
+    return nodeId.replace(/[^a-zA-Z0-9_]/g, '_');
   }
 }
 

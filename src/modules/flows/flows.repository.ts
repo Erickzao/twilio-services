@@ -1,12 +1,6 @@
-import { types } from "cassandra-driver";
-import { getClient } from "@/database";
-import type {
-  Flow,
-  FlowInput,
-  FlowNode,
-  FlowStatus,
-  FlowUpdateInput,
-} from "./flows.types";
+import { types } from 'cassandra-driver';
+import { getClient } from '@/database';
+import type { Flow, FlowInput, FlowNode, FlowStatus, FlowUpdateInput } from './flows.types';
 
 export class FlowsRepository {
   private get client() {
@@ -22,29 +16,20 @@ export class FlowsRepository {
   }
 
   async findById(id: string): Promise<Flow | null> {
-    const query = "SELECT * FROM flows WHERE id = ?";
-    const result = await this.client.execute(
-      query,
-      [types.Uuid.fromString(id)],
-      { prepare: true },
-    );
+    const query = 'SELECT * FROM flows WHERE id = ?';
+    const result = await this.client.execute(query, [types.Uuid.fromString(id)], { prepare: true });
     const row = result.rows[0];
     return row ? this.mapRowToFlow(row) : null;
   }
 
   async findByTwilioSid(twilioFlowSid: string): Promise<Flow | null> {
-    const lookupQuery =
-      "SELECT flow_id FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?";
-    const lookupResult = await this.client.execute(
-      lookupQuery,
-      [twilioFlowSid],
-      { prepare: true },
-    );
+    const lookupQuery = 'SELECT flow_id FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?';
+    const lookupResult = await this.client.execute(lookupQuery, [twilioFlowSid], { prepare: true });
     const lookupRow = lookupResult.rows[0];
 
     if (!lookupRow) return null;
 
-    const flowId = lookupRow.get("flow_id");
+    const flowId = lookupRow.get('flow_id');
     return this.findById(flowId.toString());
   }
 
@@ -65,7 +50,7 @@ export class FlowsRepository {
         input.description || null,
         JSON.stringify(input.nodes),
         input.startNodeId,
-        "draft" as FlowStatus,
+        'draft' as FlowStatus,
         now,
         now,
       ],
@@ -78,7 +63,7 @@ export class FlowsRepository {
       description: input.description,
       nodes: input.nodes,
       start_node_id: input.startNodeId,
-      status: "draft",
+      status: 'draft',
       created_at: now,
       updated_at: now,
     };
@@ -89,32 +74,32 @@ export class FlowsRepository {
     if (!existing) return null;
 
     const now = new Date();
-    const updates: string[] = ["updated_at = ?"];
+    const updates: string[] = ['updated_at = ?'];
     const values: unknown[] = [now];
 
     if (input.name !== undefined) {
-      updates.push("name = ?");
+      updates.push('name = ?');
       values.push(input.name);
     }
 
     if (input.description !== undefined) {
-      updates.push("description = ?");
+      updates.push('description = ?');
       values.push(input.description);
     }
 
     if (input.nodes !== undefined) {
-      updates.push("nodes = ?");
+      updates.push('nodes = ?');
       values.push(JSON.stringify(input.nodes));
     }
 
     if (input.startNodeId !== undefined) {
-      updates.push("start_node_id = ?");
+      updates.push('start_node_id = ?');
       values.push(input.startNodeId);
     }
 
     values.push(types.Uuid.fromString(id));
 
-    const query = `UPDATE flows SET ${updates.join(", ")} WHERE id = ?`;
+    const query = `UPDATE flows SET ${updates.join(', ')} WHERE id = ?`;
     await this.client.execute(query, values, { prepare: true });
 
     return this.findById(id);
@@ -130,27 +115,23 @@ export class FlowsRepository {
     if (!existing) return null;
 
     const now = new Date();
-    const updates: string[] = ["updated_at = ?", "status = ?"];
+    const updates: string[] = ['updated_at = ?', 'status = ?'];
     const values: unknown[] = [now, status];
 
     if (twilioFlowSid !== undefined) {
-      updates.push("twilio_flow_sid = ?");
+      updates.push('twilio_flow_sid = ?');
       values.push(twilioFlowSid);
 
       // Atualizar lookup table
-      if (
-        existing.twilio_flow_sid &&
-        existing.twilio_flow_sid !== twilioFlowSid
-      ) {
-        await this.client.execute(
-          "DELETE FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?",
-          [existing.twilio_flow_sid],
-        );
+      if (existing.twilio_flow_sid && existing.twilio_flow_sid !== twilioFlowSid) {
+        await this.client.execute('DELETE FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?', [
+          existing.twilio_flow_sid,
+        ]);
       }
 
       if (twilioFlowSid) {
         await this.client.execute(
-          "INSERT INTO flows_by_twilio_sid (twilio_flow_sid, flow_id) VALUES (?, ?)",
+          'INSERT INTO flows_by_twilio_sid (twilio_flow_sid, flow_id) VALUES (?, ?)',
           [twilioFlowSid, types.Uuid.fromString(id)],
           { prepare: true },
         );
@@ -158,18 +139,18 @@ export class FlowsRepository {
     }
 
     if (errorMessage !== undefined) {
-      updates.push("error_message = ?");
+      updates.push('error_message = ?');
       values.push(errorMessage);
     }
 
-    if (status === "published") {
-      updates.push("published_at = ?");
+    if (status === 'published') {
+      updates.push('published_at = ?');
       values.push(now);
     }
 
     values.push(types.Uuid.fromString(id));
 
-    const query = `UPDATE flows SET ${updates.join(", ")} WHERE id = ?`;
+    const query = `UPDATE flows SET ${updates.join(', ')} WHERE id = ?`;
     await this.client.execute(query, values, { prepare: true });
 
     return this.findById(id);
@@ -181,14 +162,13 @@ export class FlowsRepository {
 
     // Remover da lookup table se existir
     if (existing.twilio_flow_sid) {
-      await this.client.execute(
-        "DELETE FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?",
-        [existing.twilio_flow_sid],
-      );
+      await this.client.execute('DELETE FROM flows_by_twilio_sid WHERE twilio_flow_sid = ?', [
+        existing.twilio_flow_sid,
+      ]);
     }
 
     // Deletar o flow
-    const deleteQuery = "DELETE FROM flows WHERE id = ?";
+    const deleteQuery = 'DELETE FROM flows WHERE id = ?';
     await this.client.execute(deleteQuery, [types.Uuid.fromString(id)], {
       prepare: true,
     });
@@ -197,7 +177,7 @@ export class FlowsRepository {
   }
 
   private mapRowToFlow(row: types.Row): Flow {
-    const nodesJson = row.get("nodes");
+    const nodesJson = row.get('nodes');
     let nodes: FlowNode[] = [];
 
     try {
@@ -207,17 +187,17 @@ export class FlowsRepository {
     }
 
     return {
-      id: row.get("id")?.toString() ?? "",
-      name: row.get("name") ?? "",
-      description: row.get("description") ?? undefined,
+      id: row.get('id')?.toString() ?? '',
+      name: row.get('name') ?? '',
+      description: row.get('description') ?? undefined,
       nodes,
-      start_node_id: row.get("start_node_id") ?? "",
-      twilio_flow_sid: row.get("twilio_flow_sid") ?? undefined,
-      status: (row.get("status") as FlowStatus) ?? "draft",
-      error_message: row.get("error_message") ?? undefined,
-      created_at: row.get("created_at") ?? new Date(),
-      updated_at: row.get("updated_at") ?? new Date(),
-      published_at: row.get("published_at") ?? undefined,
+      start_node_id: row.get('start_node_id') ?? '',
+      twilio_flow_sid: row.get('twilio_flow_sid') ?? undefined,
+      status: (row.get('status') as FlowStatus) ?? 'draft',
+      error_message: row.get('error_message') ?? undefined,
+      created_at: row.get('created_at') ?? new Date(),
+      updated_at: row.get('updated_at') ?? new Date(),
+      published_at: row.get('published_at') ?? undefined,
     };
   }
 }

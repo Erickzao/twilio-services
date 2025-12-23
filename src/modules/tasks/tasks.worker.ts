@@ -1,7 +1,7 @@
-import { createLogger } from "@/shared/utils/logger";
-import { tasksService } from "./tasks.service";
+import { createLogger } from '@/shared/utils/logger';
+import { tasksService } from './tasks.service';
 
-const logger = createLogger("TasksWorker");
+const logger = createLogger('TasksWorker');
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 let running = false;
@@ -16,7 +16,7 @@ async function tick(): Promise<void> {
     const errorMessage =
       error instanceof Error
         ? error.message
-        : typeof error === "string"
+        : typeof error === 'string'
           ? error
           : JSON.stringify(error);
     logger.error(
@@ -31,9 +31,9 @@ async function tick(): Promise<void> {
 export function startTasksAutoProcessor(): void {
   if (intervalHandle) return;
 
-  const enabled = process.env.TASKS_AUTO_ENABLED !== "false";
+  const enabled = process.env.TASKS_AUTO_ENABLED !== 'false';
   if (!enabled) {
-    logger.warn("Tasks auto processor disabled (TASKS_AUTO_ENABLED=false)");
+    logger.warn('Tasks auto processor disabled (TASKS_AUTO_ENABLED=false)');
     return;
   }
 
@@ -51,5 +51,5 @@ export function stopTasksAutoProcessor(): void {
   if (!intervalHandle) return;
   clearInterval(intervalHandle);
   intervalHandle = null;
-  logger.log("Tasks auto processor stopped");
+  logger.log('Tasks auto processor stopped');
 }

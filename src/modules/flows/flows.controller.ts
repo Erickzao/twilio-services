@@ -1,7 +1,7 @@
-import { Elysia, t } from "elysia";
-import { flowsService } from "./flows.service";
-import { twilioContentClient } from "./flows.content";
-import type { FlowInput, FlowNode } from "./flows.types";
+import { Elysia, t } from 'elysia';
+import { twilioContentClient } from './flows.content';
+import { flowsService } from './flows.service';
+import type { FlowInput, FlowNode } from './flows.types';
 
 // Schema para posição x,y
 const PositionSchema = t.Object({
@@ -32,10 +32,10 @@ const TransferConfigSchema = t.Optional(
 const FlowNodeSchema = t.Object({
   id: t.String({ minLength: 1 }),
   type: t.Union([
-    t.Literal("message"),
-    t.Literal("question"),
-    t.Literal("buttons"),
-    t.Literal("transfer"),
+    t.Literal('message'),
+    t.Literal('question'),
+    t.Literal('buttons'),
+    t.Literal('transfer'),
   ]),
   position: PositionSchema,
   content: t.String({ minLength: 1 }),
@@ -43,7 +43,7 @@ const FlowNodeSchema = t.Object({
   nextNodeId: t.Optional(t.String()),
   transferConfig: TransferConfigSchema,
   timeout: t.Optional(t.Number()),
-  contentTemplateSid: t.Optional(t.String({ pattern: "^HX[a-f0-9]{32}$" })), // HX SID para Content Templates
+  contentTemplateSid: t.Optional(t.String({ pattern: '^HX[a-f0-9]{32}$' })), // HX SID para Content Templates
 });
 
 // Schema para criar flow
@@ -78,10 +78,10 @@ const UpdateFlowSchema = t.Object({
   startNodeId: t.Optional(t.String({ minLength: 1 })),
 });
 
-export const flowsController = new Elysia({ prefix: "/flows" })
+export const flowsController = new Elysia({ prefix: '/flows' })
   // Listar todos os flows
   .get(
-    "/",
+    '/',
     async ({ query }) => {
       const flows = await flowsService.getAll(query.limit);
       return { data: flows };
@@ -91,20 +91,20 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         limit: t.Optional(t.Numeric({ default: 100 })),
       }),
       detail: {
-        summary: "List all flows",
-        tags: ["Flows"],
+        summary: 'List all flows',
+        tags: ['Flows'],
       },
     },
   )
 
   // Obter flow por ID
   .get(
-    "/:id",
+    '/:id',
     async ({ params, set }) => {
       const flow = await flowsService.getById(params.id);
       if (!flow) {
         set.status = 404;
-        return { message: "Flow not found" };
+        return { message: 'Flow not found' };
       }
       return { data: flow };
     },
@@ -113,18 +113,18 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         id: t.String(),
       }),
       detail: {
-        summary: "Get flow by ID",
-        tags: ["Flows"],
+        summary: 'Get flow by ID',
+        tags: ['Flows'],
       },
     },
   )
 
   // Criar novo flow
   .post(
-    "/menu",
+    '/menu',
     async ({ body, set }) => {
       try {
-        const menuNodeId = "menu";
+        const menuNodeId = 'menu';
 
         const seenButtonIds = new Set<string>();
         for (const btn of body.botoes) {
@@ -138,7 +138,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         const transferNodeIdsByButtonId = new Map<string, string>();
 
         const makeSafeId = (prefix: string, raw: string): string => {
-          const base = `${prefix}_${raw}`.replace(/[^a-zA-Z0-9_]/g, "_");
+          const base = `${prefix}_${raw}`.replace(/[^a-zA-Z0-9_]/g, '_');
           let candidate = base;
           let counter = 1;
           while (usedNodeIds.has(candidate)) {
@@ -150,7 +150,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         };
 
         const transferNodes: FlowNode[] = body.botoes.map((btn) => {
-          const transferNodeId = makeSafeId("transfer", btn.id);
+          const transferNodeId = makeSafeId('transfer', btn.id);
           transferNodeIdsByButtonId.set(btn.id, transferNodeId);
 
           const baseConfig = body.transferConfig || {};
@@ -163,9 +163,9 @@ export const flowsController = new Elysia({ prefix: "/flows" })
 
           return {
             id: transferNodeId,
-            type: "transfer",
+            type: 'transfer',
             position: { x: 0, y: 0 },
-            content: "Transferindo...",
+            content: 'Transferindo...',
             transferConfig: {
               ...baseConfig,
               priority: baseConfig.priority ?? 1,
@@ -195,7 +195,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
           nodes: [
             {
               id: menuNodeId,
-              type: "buttons",
+              type: 'buttons',
               position: { x: 0, y: 0 },
               content: body.mensagem,
               buttons: menuButtons,
@@ -217,7 +217,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         if (!publishResult.success) {
           set.status = 400;
           return {
-            message: publishResult.error || "Failed to publish flow",
+            message: publishResult.error || 'Failed to publish flow',
             data: flow,
           };
         }
@@ -230,21 +230,20 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to create menu flow";
+        const message = err instanceof Error ? err.message : 'Failed to create menu flow';
         return { message };
       }
     },
     {
       body: CreateMenuFlowSchema,
       detail: {
-        summary: "Create a menu flow from titulo/mensagem/botoes",
-        tags: ["Flows"],
+        summary: 'Create a menu flow from titulo/mensagem/botoes',
+        tags: ['Flows'],
       },
     },
   )
   .post(
-    "/",
+    '/',
     async ({ body, set }) => {
       try {
         const flow = await flowsService.create(body);
@@ -252,35 +251,33 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         return { data: flow };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to create flow";
+        const message = err instanceof Error ? err.message : 'Failed to create flow';
         return { message };
       }
     },
     {
       body: CreateFlowSchema,
       detail: {
-        summary: "Create a new flow",
-        tags: ["Flows"],
+        summary: 'Create a new flow',
+        tags: ['Flows'],
       },
     },
   )
 
   // Atualizar flow
   .put(
-    "/:id",
+    '/:id',
     async ({ params, body, set }) => {
       try {
         const flow = await flowsService.update(params.id, body);
         if (!flow) {
           set.status = 404;
-          return { message: "Flow not found" };
+          return { message: 'Flow not found' };
         }
         return { data: flow };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to update flow";
+        const message = err instanceof Error ? err.message : 'Failed to update flow';
         return { message };
       }
     },
@@ -290,27 +287,26 @@ export const flowsController = new Elysia({ prefix: "/flows" })
       }),
       body: UpdateFlowSchema,
       detail: {
-        summary: "Update flow by ID",
-        tags: ["Flows"],
+        summary: 'Update flow by ID',
+        tags: ['Flows'],
       },
     },
   )
 
   // Deletar flow
   .delete(
-    "/:id",
+    '/:id',
     async ({ params, set }) => {
       try {
         const deleted = await flowsService.delete(params.id);
         if (!deleted) {
           set.status = 404;
-          return { message: "Flow not found" };
+          return { message: 'Flow not found' };
         }
-        return { message: "Flow deleted successfully" };
+        return { message: 'Flow deleted successfully' };
       } catch (err) {
         set.status = 500;
-        const message =
-          err instanceof Error ? err.message : "Failed to delete flow";
+        const message = err instanceof Error ? err.message : 'Failed to delete flow';
         return { message };
       }
     },
@@ -319,20 +315,20 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         id: t.String(),
       }),
       detail: {
-        summary: "Delete flow by ID",
-        tags: ["Flows"],
+        summary: 'Delete flow by ID',
+        tags: ['Flows'],
       },
     },
   )
 
   // Preview do JSON Twilio (sem publicar)
   .get(
-    "/:id/preview",
+    '/:id/preview',
     async ({ params, set }) => {
       const preview = await flowsService.preview(params.id);
       if (!preview) {
         set.status = 404;
-        return { message: "Flow not found" };
+        return { message: 'Flow not found' };
       }
       return { data: preview };
     },
@@ -341,45 +337,45 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         id: t.String(),
       }),
       detail: {
-        summary: "Preview Twilio JSON definition without publishing",
-        tags: ["Flows"],
+        summary: 'Preview Twilio JSON definition without publishing',
+        tags: ['Flows'],
       },
     },
   )
 
   // Validar flow contra Twilio
   .post(
-    "/:id/validate",
+    '/:id/validate',
     async ({ params, set }) => {
       const result = await flowsService.validate(params.id);
       if (!result.valid) {
         set.status = 400;
-        return { message: "Validation failed", errors: result.errors };
+        return { message: 'Validation failed', errors: result.errors };
       }
-      return { message: "Flow is valid", valid: true };
+      return { message: 'Flow is valid', valid: true };
     },
     {
       params: t.Object({
         id: t.String(),
       }),
       detail: {
-        summary: "Validate flow against Twilio schema",
-        tags: ["Flows"],
+        summary: 'Validate flow against Twilio schema',
+        tags: ['Flows'],
       },
     },
   )
 
   // Publicar flow na Twilio
   .post(
-    "/:id/publish",
+    '/:id/publish',
     async ({ params, set }) => {
       const result = await flowsService.publish(params.id);
       if (!result.success) {
         set.status = 400;
-        return { message: result.error || "Failed to publish flow" };
+        return { message: result.error || 'Failed to publish flow' };
       }
       return {
-        message: "Flow published successfully",
+        message: 'Flow published successfully',
         data: { twilioFlowSid: result.twilioFlowSid },
       };
     },
@@ -388,23 +384,23 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         id: t.String(),
       }),
       detail: {
-        summary: "Publish flow to Twilio Studio",
-        tags: ["Flows"],
+        summary: 'Publish flow to Twilio Studio',
+        tags: ['Flows'],
       },
     },
   )
 
   // Despublicar flow (colocar em draft)
   .post(
-    "/:id/unpublish",
+    '/:id/unpublish',
     async ({ params, set }) => {
       const result = await flowsService.unpublish(params.id);
       if (!result.success) {
         set.status = 400;
-        return { message: result.error || "Failed to unpublish flow" };
+        return { message: result.error || 'Failed to unpublish flow' };
       }
       return {
-        message: "Flow unpublished successfully (now in draft)",
+        message: 'Flow unpublished successfully (now in draft)',
         data: { twilioFlowSid: result.twilioFlowSid },
       };
     },
@@ -413,15 +409,15 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         id: t.String(),
       }),
       detail: {
-        summary: "Unpublish flow (set to draft in Twilio)",
-        tags: ["Flows"],
+        summary: 'Unpublish flow (set to draft in Twilio)',
+        tags: ['Flows'],
       },
     },
   )
 
   // Listar Workflows (TaskRouter)
   .get(
-    "/taskrouter/workflows",
+    '/taskrouter/workflows',
     async ({ query, set }) => {
       try {
         const refresh = Boolean(query.refresh && query.refresh > 0);
@@ -440,8 +436,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to list workflows";
+        const message = err instanceof Error ? err.message : 'Failed to list workflows';
         return { message };
       }
     },
@@ -451,15 +446,15 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         limit: t.Optional(t.Numeric({ default: 100 })),
       }),
       detail: {
-        summary: "List TaskRouter Workflows (cached)",
-        tags: ["Flows"],
+        summary: 'List TaskRouter Workflows (cached)',
+        tags: ['Flows'],
       },
     },
   )
 
   // Listar Task Channels (TaskRouter)
   .get(
-    "/taskrouter/task-channels",
+    '/taskrouter/task-channels',
     async ({ query, set }) => {
       try {
         const refresh = Boolean(query.refresh && query.refresh > 0);
@@ -478,8 +473,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error ? err.message : "Failed to list task channels";
+        const message = err instanceof Error ? err.message : 'Failed to list task channels';
         return { message };
       }
     },
@@ -489,15 +483,15 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         limit: t.Optional(t.Numeric({ default: 100 })),
       }),
       detail: {
-        summary: "List TaskRouter Task Channels (cached)",
-        tags: ["Flows"],
+        summary: 'List TaskRouter Task Channels (cached)',
+        tags: ['Flows'],
       },
     },
   )
 
   // Listar Content Templates da Twilio
   .get(
-    "/content-templates",
+    '/content-templates',
     async ({ query, set }) => {
       try {
         const refresh = Boolean(query.refresh && query.refresh > 0);
@@ -515,10 +509,7 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         };
       } catch (err) {
         set.status = 400;
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Failed to list content templates";
+        const message = err instanceof Error ? err.message : 'Failed to list content templates';
         return { message };
       }
     },
@@ -528,34 +519,34 @@ export const flowsController = new Elysia({ prefix: "/flows" })
         pageSize: t.Optional(t.Numeric({ default: 50 })),
       }),
       detail: {
-        summary: "List Twilio Content Templates (cached)",
-        tags: ["Flows"],
+        summary: 'List Twilio Content Templates (cached)',
+        tags: ['Flows'],
       },
     },
   )
 
   // Criar Content Template de teste
   .post(
-    "/content-templates/test",
+    '/content-templates/test',
     async ({ set }) => {
       const result = await twilioContentClient.createQuickReplyTemplate(
-        "test_template_" + Date.now(),
-        "Teste de template com botões",
+        `test_template_${Date.now()}`,
+        'Teste de template com botões',
         [
-          { id: "btn1", label: "Opção 1", value: "opcao1" },
-          { id: "btn2", label: "Opção 2", value: "opcao2" },
+          { id: 'btn1', label: 'Opção 1', value: 'opcao1' },
+          { id: 'btn2', label: 'Opção 2', value: 'opcao2' },
         ],
       );
       if (!result.success) {
         set.status = 400;
-        return { message: result.error || "Failed to create content template" };
+        return { message: result.error || 'Failed to create content template' };
       }
       return { data: { contentSid: result.contentSid } };
     },
     {
       detail: {
-        summary: "Create test Content Template",
-        tags: ["Flows"],
+        summary: 'Create test Content Template',
+        tags: ['Flows'],
       },
     },
   );
